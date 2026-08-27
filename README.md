@@ -13,7 +13,8 @@
 | Mac Apple Silicon | 已接上原生 `mlx-serve` 的 adapter seam，開發機已完成 shape → GLB smoke test |
 | Windows x64 NVIDIA | 已建立私有 Python／CUDA wrapper 與下載流程，仍需 NVIDIA Windows 實機驗證 |
 | Docker | 提供 mock backend 與完整 contract test，不需要主機安裝 Python |
-| 正式安裝包 | 尚未附上完整 runtime、模型檔、簽章或乾淨電腦驗證結果 |
+| Mac 安裝包 pipeline | 已可下載固定版本 runtime、產生 payload／DMG，並通過本機 bundle 與 localhost 啟動 smoke test；目前是 ad-hoc signature，尚未 notarize 或做乾淨電腦模型下載驗證 |
+| Windows 安裝包 pipeline | 已建立 private-runtime payload builder 與 Inno Setup gate；尚缺完整 Python／PyTorch／CUDA／native payload 與 NVIDIA Windows 實機驗證 |
 
 ## Docker 開發環境
 
@@ -48,7 +49,7 @@ docker compose down -v
 5. backend 產生 GLB，UI 顯示 3D 預覽並提供下載。
 6. 再次點擊應用程式時，若服務已在執行，Launcher 只重新開啟既有 localhost 頁面，不重複啟動程序。
 
-正式安裝包的 runtime 會隨應用程式提供。學生不應需要自行安裝 Python、pip、Node.js、Git、Conda、Docker 或 CUDA Toolkit；目前 repository 內的 packaging 檔案是打包 harness，尚不等於可直接發放的安裝檔。
+正式安裝包的 runtime 會隨應用程式提供。學生不應需要自行安裝 Python、pip、Node.js、Git、Conda、Docker 或 CUDA Toolkit。Mac 可由 [Mac payload builder](packaging/macos/build-payload.command) 與 [DMG builder](packaging/macos/build-dmg.command) 產生內部測試包；Windows 仍必須先取得並驗證私有 CUDA runtime，不能只靠目前這台 Mac 產出可宣稱完成的 Windows 安裝檔。
 
 ## Mac 與 Windows 的差異
 

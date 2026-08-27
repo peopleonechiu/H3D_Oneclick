@@ -43,6 +43,8 @@
       "runtime/backend/download_model.py",
       "--repo-id",
       "tencent/Hunyuan3D-2.1",
+      "--revision",
+      "0b94677654c57bb9a6b6845cd7b704ccf551d327",
       "--local-dir",
       "userData/models/windows/hunyuan3d-2.1"
     ],
@@ -54,6 +56,7 @@
     "id": "hunyuan3d-2-1-8bit",
     "format": "tencent-hunyuan3d-2.1-cuda",
     "repository": "tencent/Hunyuan3D-2.1",
+    "revision": "0b94677654c57bb9a6b6845cd7b704ccf551d327",
     "licenseFiles": ["LICENSE", "Notice.txt", "third-party/"],
     "downloadAfterApplicationLaunch": true,
     "requires": {

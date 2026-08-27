@@ -1,0 +1,19 @@
+{
+  "applicationVersion": "0.1.0",
+  "node": {
+    "version": "v24.18.0",
+    "macosArm64": {
+      "archive": "node-v24.18.0-darwin-arm64.tar.gz",
+      "sha256": "e1a97e14c99c803e96c7339403282ea05a499c32f8d83defe9ef5ec66f979ed1"
+    },
+    "windowsX64": {
+      "archive": "node-v24.18.0-win-x64.zip",
+      "sha256": "0ae68406b42d7725661da979b1403ec9926da205c6770827f33aac9d8f26e821"
+    }
+  },
+  "mlxServe": {
+    "version": "v26.8.10",
+    "archive": "mlx-serve-bin-macos-arm64.tar.gz",
+    "sha256": "b42234cbb150b77c20995f166d2b4ffcb14178c243dffb2524e7f19f5b69e350"
+  }
+}

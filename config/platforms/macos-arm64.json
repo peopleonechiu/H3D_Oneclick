@@ -45,6 +45,7 @@
     "id": "hunyuan3d-2-1-8bit",
     "format": "mlx-serve-converted",
     "repository": "ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+    "revision": "11ca09dc21a930e9861c0cd19bed0f0507fac232",
     "licenseFiles": ["LICENSE", "paint/LICENSE", "unirig/NOTICE"],
     "downloadAfterApplicationLaunch": true,
     "requires": {

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1",
+    "revision": "82920d643c0dc2f7bfd7255f45f62d386edfe60c"
+  },
+  "python": {
+    "version": "3.10",
+    "pytorch": "2.5.1+cu124",
+    "cudaRuntime": "12.4"
+  },
+  "model": {
+    "repository": "tencent/Hunyuan3D-2.1",
+    "revision": "0b94677654c57bb9a6b6845cd7b704ccf551d327"
+  },
+  "hardware": {
+    "shapeMinimumVramGb": 10,
+    "textureMinimumVramGb": 21,
+    "shapeAndTextureMinimumVramGb": 29
+  }
+}

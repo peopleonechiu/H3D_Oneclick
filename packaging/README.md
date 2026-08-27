@@ -2,7 +2,7 @@
 
 學生端安裝包的目標是自帶所需 runtime 與啟動器。學生只需要安裝應用程式並點擊啟動，不需要自行安裝 Python、Node.js、Git、Docker 或 CUDA Toolkit，也不需要修改系統 `PATH`。
 
-目前這個資料夾是打包 harness 與啟動規格，不包含可直接發放的完整 runtime、模型 payload、簽章或安裝檔。正式版本必須先通過實機與乾淨電腦驗證。
+這個資料夾包含可重複執行的 payload builder、完整性 verifier、啟動器與安裝器定義。產生的 `release/` 不進 Git；正式對外版本仍必須通過實機、乾淨電腦、簽章與模型下載驗證。
 
 ```text
 JIC_YZUIC_Hunyuan3D-<platform>/
@@ -18,6 +18,58 @@ JIC_YZUIC_Hunyuan3D-<platform>/
 ├─ runtime/models/dinov2-giant/   # Windows PBR conditioner（如有打包）
 ├─ runtime/python/python.exe     # 僅 Windows
 └─ packaging/<platform>/launch.*
+```
+
+## 建立 Mac 安裝包
+
+在 Apple Silicon Mac 上執行：
+
+```bash
+./packaging/macos/build-payload.command
+./packaging/macos/build-dmg.command
+```
+
+建置器會固定版本並驗證 hash，下載 Node 與原生 `mlx-serve`，建置 production Web UI，將 adapter 依賴放入 payload，再產生：
+
+```text
+release/macos/payload/
+release/installers/JIC_YZUIC_Hunyuan3D-Mac.dmg
+```
+
+預設使用 ad-hoc signature，適合本機與內部測試；正式發給學生時，以 `JIC_CODESIGN_IDENTITY` 提供 Developer ID Application，再另外完成 notarization。Ad-hoc DMG 不能宣稱已通過 Gatekeeper 的正式發佈條件。
+
+Mac payload 只帶必要的 Node binary，不帶 npm，也不帶模型。模型由 UI 在第一次啟動後下載到使用者資料夾。
+
+## 建立 Windows 安裝包
+
+Windows payload 必須由已準備好的私有 runtime 建置；建置器不會把不完整的 Python 或 CUDA 檔案假裝成可用 runtime：
+
+```powershell
+.\packaging\windows\Build-Payload.ps1 `
+  -PythonRuntime C:\build\python-runtime `
+  -BackendVendor C:\build\Hunyuan3D-2.1 `
+  -CudaDll C:\build\cuda-dll `
+  -DinoModel C:\build\dinov2-giant `
+  -BackendRevision 82920d643c0dc2f7bfd7255f45f62d386edfe60c `
+  -BuildInstaller
+```
+
+`PythonRuntime` 必須已包含 `python.exe`、Python 3.10、PyTorch 2.5.1+cu124、Pillow、`huggingface_hub` 及其他已安裝依賴；`BackendVendor` 必須是 [runtime-spec.json](windows/runtime-spec.json) 鎖定的 Tencent source/native assets。官方 Hunyuan3D 安裝流程需要 CUDA 版 PyTorch 與 custom rasterizer，因此這些編譯結果必須在建置階段放入包內，不能讓學生第一次啟動時編譯。執行器會把 Node、Python、CUDA DLL、source tree、adapter 與 UI 一起放入 `release/windows/`，最後由 Inno Setup 產生 Setup EXE。學生端不需要安裝任何上述工具。
+
+若缺少私有 Windows runtime，這個命令會停止並列出缺少項目；目前 macOS 開發機不能替代 NVIDIA Windows 實機完成這個 gate。
+
+## Payload verifier
+
+兩個 builder 都會執行同一個 verifier，也可以手動檢查：
+
+```bash
+node packaging/verify-payload.mjs macos release/macos/payload
+```
+
+Windows 由 builder 使用包內 Node 執行：
+
+```powershell
+node packaging\verify-payload.mjs windows release\windows
 ```
 
 模型檔與生成輸出會放在使用者的應用程式資料目錄，不放在受保護的安裝目錄。Launcher 會在第一次啟動時建立資料目錄。
@@ -49,6 +101,6 @@ JIC_YZUIC_Hunyuan3D-<platform>/
 - Windows 先顯示 NVIDIA GPU／VRAM 狀態；硬體未通過時，CUDA 模型下載按鈕維持停用。
 - 模型準備完成後，兩邊回到相同的照片 → GLB 操作流程。
 
-`packaging/windows/installer.iss` 是 Windows Inno Setup 安裝器定義。正式建置時，需在 Windows 將完整 payload 放入 `release/windows/`，再產生並簽署 Setup 執行檔。
+`packaging/windows/installer.iss` 是 Windows Inno Setup 安裝器定義，`Build-Payload.ps1 -BuildInstaller` 會在找到 `ISCC.exe` 時呼叫它。
 
-`packaging/macos/build-dmg.command` 可將 staged payload 組成 `JIC_YZUIC_Hunyuan3D-Mac.app` 與 DMG。若提供 `JIC_CODESIGN_IDENTITY`，腳本可進行 codesign；notarization 仍是正式發佈階段的工作。
+`packaging/macos/build-dmg.command` 會先驗證 staged payload，再組成 `JIC_YZUIC_Hunyuan3D-Mac.app` 與 DMG；notarization 仍是正式發佈階段的工作。

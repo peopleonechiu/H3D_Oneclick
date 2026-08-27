@@ -23,6 +23,10 @@ if [ ! -x "$BACKEND" ]; then
   echo "mlx-serve runtime not found: $BACKEND"
   exit 1
 fi
+if ! command -v curl >/dev/null 2>&1; then
+  echo "macOS curl is required to check the local service."
+  exit 1
+fi
 if [ ! -f "$ADAPTER_ENTRY" ] || [ ! -f "$WEB_ENTRY" ] || [ ! -f "$DIST_DIR/index.html" ]; then
   echo "JIC_YZUIC_Hunyuan3D-Mac package is incomplete."
   exit 1
@@ -30,7 +34,7 @@ fi
 
 # A second click should reopen the existing local app instead of starting a
 # second adapter/backend on the same ports.
-if "$NODE" -e 'fetch(process.argv[1]).then((response) => response.json()).then((payload) => process.exit(payload.adapter === "jic-local-adapter" ? 0 : 1)).catch(() => process.exit(1))' "http://127.0.0.1:${WEB_PORT}/api/health" >/dev/null 2>&1; then
+if curl --silent --show-error --fail --max-time 1 "http://127.0.0.1:${WEB_PORT}/api/health" | grep -q '"adapter":"jic-local-adapter"'; then
   open "http://127.0.0.1:${WEB_PORT}"
   exit 0
 fi

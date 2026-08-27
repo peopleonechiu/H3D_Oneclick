@@ -50,6 +50,7 @@ $BackendArgs = @(
 $ModelDownloadArgs = @(
   $ModelDownloadScript,
   "--repo-id", "tencent/Hunyuan3D-2.1",
+  "--revision", "0b94677654c57bb9a6b6845cd7b704ccf551d327",
   "--local-dir", $ModelRoot
 )
 

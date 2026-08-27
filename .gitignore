@@ -3,6 +3,7 @@ node_modules/
 data/
 outputs/
 models/
+release/
 *.partial
 *.log
 __pycache__/
