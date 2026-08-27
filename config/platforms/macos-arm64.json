@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "applicationId": "JIC_YZUIC_Hunyuan3D-Mac",
+  "platform": "macos-arm64",
+  "ui": {
+    "adapterPort": 8787,
+    "webPort": 4173,
+    "bindAddress": "127.0.0.1"
+  },
+  "backend": {
+    "kind": "mlx-serve",
+    "protocol": "mlx-native",
+    "url": "http://127.0.0.1:11234",
+    "command": "runtime/mlx-serve",
+    "args": [
+      "--serve",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "11234",
+      "--model-dir",
+      "userData/.mlx-serve/models"
+    ],
+    "modelTarget": "userData/.mlx-serve/models/ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+    "requestModel": "Hunyuan3D-2.1-MLX-Serve-8bit",
+    "modelRoot": "userData/.mlx-serve/models/ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+    "resolvePathsRelativeToApplication": false,
+    "resolveModelRootAtRuntime": true
+  },
+  "adapterEnvironment": {
+    "PLATFORM": "macos-arm64",
+    "BACKEND_KIND": "mlx-serve",
+    "BACKEND_PROTOCOL": "mlx-native",
+    "JIC_NATIVE_RUNTIME": "1",
+    "BACKEND_URL": "http://127.0.0.1:11234",
+    "MODEL_DISPLAY_NAME": "Hunyuan3D 2.1 (8-bit / MLX)",
+    "BACKEND_MODEL_TARGET": "userData/.mlx-serve/models/ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+    "BACKEND_REQUEST_MODEL": "Hunyuan3D-2.1-MLX-Serve-8bit",
+    "MODEL_DOWNLOAD_COMMAND": "runtime/mlx-serve",
+    "MODEL_DOWNLOAD_ARGS": ["pull", "ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit"],
+    "MODEL_EXPECTED_PATH": "userData/.mlx-serve/models/ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+    "MODEL_TOTAL_BYTES": 8100000000
+  },
+  "model": {
+    "id": "hunyuan3d-2-1-8bit",
+    "format": "mlx-serve-converted",
+    "repository": "ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+    "licenseFiles": ["LICENSE", "paint/LICENSE", "unirig/NOTICE"],
+    "downloadAfterApplicationLaunch": true,
+    "requires": {
+      "architecture": "Apple Silicon",
+      "metal": true,
+      "globalPython": false,
+      "docker": false
+    }
+  }
+}

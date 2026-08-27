@@ -1,0 +1,36 @@
+services:
+  mock-backend:
+    build:
+      context: ./mock-backend
+    environment:
+      PORT: "11234"
+      MOCK_STEP_DELAY_MS: "80"
+    expose:
+      - "11234"
+
+  adapter:
+    build:
+      context: ./adapter
+    environment:
+      PORT: "8787"
+      BACKEND_URL: http://mock-backend:11234
+      DATA_DIR: /data
+      PLATFORM: docker-mock
+      BACKEND_KIND: mock
+    depends_on:
+      - mock-backend
+    ports:
+      - "8787:8787"
+    volumes:
+      - adapter-data:/data
+
+  web:
+    build:
+      context: ./web
+    depends_on:
+      - adapter
+    ports:
+      - "4173:4173"
+
+volumes:
+  adapter-data:

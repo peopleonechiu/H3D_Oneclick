@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "applicationId": "JIC_YZUIC_Hunyuan3D-Windows",
+  "platform": "windows-x64-cuda",
+  "ui": {
+    "adapterPort": 8787,
+    "webPort": 4173,
+    "bindAddress": "127.0.0.1"
+  },
+  "backend": {
+    "kind": "hunyuan3d-cuda",
+    "protocol": "official-hunyuan",
+    "url": "http://127.0.0.1:11234",
+    "command": "runtime/python/python.exe",
+    "args": [
+      "runtime/backend/server.py",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "11234",
+      "--model-dir",
+      "userData/models/windows/hunyuan3d-2.1",
+      "--source-root",
+      "runtime/backend/vendor/Hunyuan3D-2.1"
+    ],
+    "modelTarget": "userData/models/windows/hunyuan3d-2.1",
+    "requestModel": "hunyuan3d-2-1-8bit",
+    "modelRoot": "userData/models/windows/hunyuan3d-2.1",
+    "resolvePathsRelativeToApplication": false,
+    "resolveModelRootAtRuntime": true
+  },
+  "adapterEnvironment": {
+    "PLATFORM": "windows-x64-cuda",
+    "BACKEND_KIND": "hunyuan3d-cuda",
+    "BACKEND_PROTOCOL": "official-hunyuan",
+    "BACKEND_URL": "http://127.0.0.1:11234",
+    "MODEL_DISPLAY_NAME": "Hunyuan3D 2.1 (CUDA)",
+    "BACKEND_MODEL_TARGET": "userData/models/windows/hunyuan3d-2.1",
+    "BACKEND_REQUEST_MODEL": "hunyuan3d-2-1-8bit",
+    "JIC_DINO_MODEL_PATH": "runtime/models/dinov2-giant",
+    "MODEL_DOWNLOAD_COMMAND": "runtime/python/python.exe",
+    "MODEL_DOWNLOAD_ARGS": [
+      "runtime/backend/download_model.py",
+      "--repo-id",
+      "tencent/Hunyuan3D-2.1",
+      "--local-dir",
+      "userData/models/windows/hunyuan3d-2.1"
+    ],
+    "MODEL_EXPECTED_PATH": "userData/models/windows/hunyuan3d-2.1",
+    "MODEL_PROGRESS_PATH": "userData/models/windows/hunyuan3d-2.1.partial",
+    "MODEL_TOTAL_BYTES": 0
+  },
+  "model": {
+    "id": "hunyuan3d-2-1-8bit",
+    "format": "tencent-hunyuan3d-2.1-cuda",
+    "repository": "tencent/Hunyuan3D-2.1",
+    "licenseFiles": ["LICENSE", "Notice.txt", "third-party/"],
+    "downloadAfterApplicationLaunch": true,
+    "requires": {
+      "architecture": "x86_64",
+      "nvidiaGpu": true,
+      "cudaToolkitOnStudentMachine": false,
+      "globalPython": false,
+      "docker": false
+    }
+  }
+}

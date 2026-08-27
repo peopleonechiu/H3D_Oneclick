@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+APP_RESOURCES=$(CDPATH= cd -- "$(dirname -- "$0")/../Resources" && pwd)
+exec "$APP_RESOURCES/packaging/macos/launch.command"

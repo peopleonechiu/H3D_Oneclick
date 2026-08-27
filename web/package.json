@@ -1,0 +1,14 @@
+{
+  "name": "jic-yzuic-hunyuan3d-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4173",
+    "build": "vite build",
+    "serve": "node server.mjs"
+  },
+  "dependencies": {
+    "three": "0.179.1",
+    "vite": "7.1.3"
+  }
+}

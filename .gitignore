@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+data/
+outputs/
+models/
+*.partial
+*.log
+__pycache__/

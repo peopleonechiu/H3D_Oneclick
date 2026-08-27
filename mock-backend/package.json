@@ -1,0 +1,8 @@
+{
+  "name": "jic-yzuic-hunyuan3d-mock-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs"
+  }
+}

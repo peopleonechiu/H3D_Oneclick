@@ -1,0 +1,11 @@
+{
+  "name": "jic-yzuic-hunyuan3d-local-adapter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "busboy": "1.6.0"
+  }
+}

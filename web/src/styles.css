@@ -1,0 +1,2868 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #f4f6fa;
+  font-synthesis: none;
+  --ink: #172033;
+  --muted: #778198;
+  --line: #e2e7f0;
+  --blue: #3478f6;
+  --blue-soft: #e9f0ff;
+  --panel: rgba(255, 255, 255, 0.82);
+  --shadow: 0 24px 80px rgba(43, 60, 94, 0.09);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: radial-gradient(circle at 80% 0%, #ffffff 0, #f4f6fa 46%, #eef1f6 100%); }
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+.hidden { display: none !important; }
+
+.app-frame { min-height: 100vh; max-width: 1540px; margin: 0 auto; padding: 28px 34px 36px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: white; font-size: 21px; font-weight: 800; background: linear-gradient(140deg, #1d63e9, #7ca8ff); box-shadow: 0 8px 20px rgba(52, 120, 246, .26); }
+.brand-kicker, .eyebrow { margin: 0 0 3px; color: #8490a7; font-size: 10px; letter-spacing: .15em; font-weight: 800; }
+h1, h2, p { margin: 0; }
+h1 { font-size: 20px; letter-spacing: -.03em; }
+h2 { font-size: 15px; letter-spacing: -.015em; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.runtime-badge, .job-status, .state-pill { border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; color: var(--muted); background: rgba(255,255,255,.7); font-size: 10px; letter-spacing: .11em; font-weight: 800; }
+.runtime-badge.online { color: #24794b; border-color: #c9ebd6; background: #effaf3; }
+.runtime-badge.offline { color: #a25c31; border-color: #f0d5c3; background: #fff7f1; }
+.icon-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); background: rgba(255,255,255,.75); font-size: 20px; line-height: 1; }
+.icon-button:hover { color: var(--blue); border-color: #a9c4ff; }
+
+.workspace { display: grid; grid-template-columns: minmax(370px, .84fr) minmax(480px, 1.35fr); gap: 22px; align-items: stretch; }
+.control-column, .result-column { min-width: 0; border: 1px solid rgba(222, 228, 239, .9); background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+.control-column { padding: 30px 30px 25px; border-radius: 24px; }
+.result-column { display: flex; flex-direction: column; padding: 24px; border-radius: 24px; }
+.section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.model-heading { margin-top: 30px; }
+.step-number { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; color: var(--blue); background: var(--blue-soft); font-size: 10px; font-weight: 900; }
+
+.drop-zone { min-height: 178px; display: grid; place-items: center; border: 1.5px dashed #bdc9df; border-radius: 18px; background: linear-gradient(145deg, #fafcff, #f1f5fc); transition: .2s ease; outline: none; }
+.drop-zone:hover, .drop-zone:focus-visible, .drop-zone.dragging { border-color: var(--blue); background: #edf4ff; transform: translateY(-1px); }
+.drop-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); }
+.drop-empty strong { color: var(--blue); font-size: 15px; }
+.drop-empty span { font-size: 12px; }
+.upload-icon { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 2px; border: 2px solid #9fb4d9; border-radius: 12px; color: #668ac6; font-size: 24px; line-height: 1; }
+.drop-selected { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px; }
+.drop-selected img { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; background: #e5eaf4; }
+.file-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.file-copy strong { overflow: hidden; color: var(--ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.file-copy span { color: var(--muted); font-size: 11px; }
+.remove-button { margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 10px; color: #8b97ac; background: transparent; font-size: 22px; }
+.remove-button:hover { color: #c14f57; background: #fff0f1; }
+.helper-copy { margin-top: 10px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+.model-card { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.75); transition: .2s ease; }
+.model-card.ready { border-color: #c9e8d5; background: #fbfffc; }
+.model-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 12px; color: #477de8; background: #edf3ff; font-size: 23px; }
+.model-copy { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.model-copy strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.model-copy span { color: var(--muted); font-size: 11px; }
+.state-pill { margin-left: auto; padding: 5px 8px; font-size: 9px; white-space: nowrap; }
+.state-pill.ready { color: #267c4d; border-color: #cbe9d7; background: #effbf3; }
+.state-pill.downloading { color: #316dcf; border-color: #cbdcff; background: #f0f5ff; }
+.state-pill.missing { color: #9a6b46; border-color: #f1ddca; background: #fff8f1; }
+.download-panel { margin-top: 12px; padding: 14px; border: 1px solid #d8e4fb; border-radius: 16px; background: #f5f8ff; }
+.download-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+.download-heading div { display: flex; flex-direction: column; gap: 4px; }
+.download-heading strong { font-size: 12px; }
+.download-heading span { color: var(--muted); font-size: 10px; }
+.download-heading > span { color: var(--blue); font-size: 12px; font-weight: 800; }
+.progress-track, .generation-progress-track { overflow: hidden; height: 7px; border-radius: 999px; background: #e2e9f5; }
+.progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4d8cf9, #72b0ff); transition: width .18s ease; }
+.download-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.download-actions .secondary-button { flex: 1; }
+.text-button { min-height: 42px; padding: 0 10px; border: 0; color: #6b7a93; background: transparent; font-size: 11px; font-weight: 800; }
+.text-button:hover:not(:disabled) { color: #b34f59; }
+.text-button:disabled { cursor: wait; opacity: .5; }
+
+.field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.field-label { color: #5d6b82; font-size: 12px; font-weight: 700; }
+.select-control { min-width: 190px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: white; font-size: 12px; outline: none; }
+.select-control:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(52,120,246,.12); }
+.advanced-panel { margin-top: 17px; border-top: 1px solid var(--line); }
+.advanced-panel summary { display: flex; justify-content: space-between; padding: 16px 0 7px; color: #66738a; cursor: pointer; font-size: 12px; font-weight: 700; list-style: none; }
+.advanced-panel summary::-webkit-details-marker { display: none; }
+.summary-chevron { color: #a0aabd; font-size: 17px; transition: transform .2s ease; }
+.advanced-panel[open] .summary-chevron { transform: rotate(180deg); }
+.advanced-content { display: flex; flex-direction: column; gap: 15px; padding: 10px 0 3px; }
+.range-field, .resolution-field { display: flex; flex-direction: column; gap: 8px; color: #5d6b82; font-size: 11px; font-weight: 700; }
+.range-field span { display: flex; justify-content: space-between; }
+output { color: var(--ink); font-weight: 800; }
+input[type="range"] { width: 100%; accent-color: var(--blue); }
+.segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: #f2f5fa; }
+.segmented button { padding: 8px 3px; border: 0; border-radius: 7px; color: #6f7c92; background: transparent; font-size: 11px; font-weight: 700; }
+.segmented button.active { color: white; background: var(--blue); box-shadow: 0 4px 10px rgba(52,120,246,.22); }
+.segmented small { display: block; margin-top: 2px; font-size: 9px; font-weight: 500; opacity: .8; }
+.field-hint { color: #99a4b7; font-size: 10px; font-weight: 500; }
+.toggle-field { display: flex; align-items: center; gap: 9px; color: #59667c; font-size: 11px; cursor: pointer; }
+.toggle-field input { position: absolute; opacity: 0; pointer-events: none; }
+.fake-checkbox { width: 19px; height: 19px; border: 1px solid #d7deea; border-radius: 6px; background: #f8fafc; }
+.toggle-field input:checked + .fake-checkbox { border-color: var(--blue); background: var(--blue); box-shadow: inset 0 0 0 4px white; }
+.toggle-field input:disabled + .fake-checkbox { opacity: .5; }
+.action-area { margin-top: 22px; }
+.primary-button, .secondary-button, .cancel-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; border-radius: 12px; font-size: 12px; font-weight: 800; text-decoration: none; transition: .2s ease; }
+.primary-button { width: 100%; border: 0; color: white; background: linear-gradient(135deg, #397cf0, #5d9bff); box-shadow: 0 10px 22px rgba(52,120,246,.22); }
+.primary-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 25px rgba(52,120,246,.27); }
+.primary-button:disabled { cursor: not-allowed; color: #aab6cb; background: #e2e9f5; box-shadow: none; }
+.cube-glyph { font-size: 20px; line-height: 1; }
+.secondary-button { padding: 0 14px; border: 1px solid var(--line); color: #4d5b72; background: white; }
+.secondary-button:hover:not(.disabled) { border-color: #a8c2f5; color: var(--blue); background: #f7faff; }
+.secondary-button.disabled { cursor: not-allowed; opacity: .45; pointer-events: none; }
+.cancel-button { width: 100%; border: 1px solid #f0cfd2; color: #b64f59; background: #fff7f7; }
+.blocking-message { margin: 9px 0 0; color: #95a0b4; text-align: center; font-size: 10px; }
+.privacy-note { display: flex; align-items: center; gap: 7px; margin-top: 22px; color: #8d99ad; font-size: 10px; }
+.privacy-note span:first-child { color: #4e9a6a; font-size: 14px; }
+
+.result-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 2px 3px 17px; }
+.result-toolbar h2 { margin-top: 4px; font-size: 18px; }
+.job-status { color: #8a96a9; font-size: 9px; }
+.job-status.running { color: #2c72d5; border-color: #cfddfb; background: #f1f6ff; }
+.job-status.complete { color: #278050; border-color: #cce8d6; background: #f0fbf4; }
+.job-status.failed { color: #b34c55; border-color: #f1d0d3; background: #fff6f6; }
+.viewer-shell { position: relative; min-height: 510px; flex: 1; overflow: hidden; border: 1px solid #e1e6ee; border-radius: 18px; background: #edf1f7; }
+#viewer-canvas { display: block; width: 100%; height: 100%; min-height: 510px; }
+.empty-view, .loading-view, .error-view { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 9px; color: #7c879b; text-align: center; pointer-events: none; }
+.empty-view strong, .loading-view strong, .error-view strong { color: #66738a; font-size: 15px; }
+.empty-view span, .loading-view span, .error-view span { font-size: 12px; }
+.empty-cube { display: grid; place-items: center; width: 72px; height: 72px; margin-bottom: 8px; border: 2px solid #b5c0d1; border-radius: 22px; color: #a3afc2; font-size: 50px; }
+.loading-view { background: rgba(237,241,247,.76); backdrop-filter: blur(5px); }
+.loading-view .generation-progress-track { width: min(300px, 65%); margin-top: 9px; }
+.spinner { width: 28px; height: 28px; margin-bottom: 7px; border: 3px solid #c8d4e9; border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 14px; color: #bd5962; background: #fff0f1; font-weight: 900; }
+.result-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 13px 0 17px; }
+.artifact-meta { margin-left: auto; overflow: hidden; color: #8c98aa; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.history-header { display: flex; justify-content: space-between; padding: 13px 2px 10px; border-top: 1px solid var(--line); color: #65728a; font-size: 11px; font-weight: 800; }
+.history-header span:last-child { color: #a0aabd; }
+.history-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; max-height: 100px; overflow: auto; }
+.history-empty { grid-column: 1 / -1; padding: 14px; border: 1px dashed var(--line); border-radius: 12px; color: #99a4b7; text-align: center; font-size: 10px; }
+.history-item { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 9px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); text-align: left; background: rgba(255,255,255,.7); }
+.history-item:hover { border-color: #b7caf1; background: #fbfdff; }
+.history-cube { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 9px; color: #6390e4; background: #edf3ff; font-size: 20px; }
+.history-item span:last-child { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.history-item strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.history-item small { color: var(--muted); font-size: 9px; }
+.toast { position: fixed; right: 28px; bottom: 26px; z-index: 10; max-width: min(360px, calc(100vw - 40px)); padding: 12px 15px; border: 1px solid #d9e2f2; border-radius: 12px; color: #53627a; background: rgba(255,255,255,.95); box-shadow: 0 12px 30px rgba(37, 52, 82, .16); font-size: 11px; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; }
+.toast.visible { opacity: 1; transform: translateY(0); }
+.toast.success { border-color: #c8e9d4; color: #267649; }
+.toast.error { border-color: #f0cfd2; color: #af4b54; }
+
+@media (max-width: 900px) {
+  .app-frame { padding: 20px 16px 28px; }
+  .workspace { grid-template-columns: 1fr; }
+  .viewer-shell, #viewer-canvas { min-height: 440px; }
+}
+
+@media (max-width: 520px) {
+  .topbar { align-items: flex-start; }
+  .runtime-badge { display: none; }
+  .control-column, .result-column { padding: 19px; border-radius: 18px; }
+  .control-column { padding-bottom: 20px; }
+  .result-toolbar h2 { font-size: 16px; }
+  .viewer-shell, #viewer-canvas { min-height: 350px; }
+  .result-actions { align-items: stretch; }
+  .result-actions .secondary-button { flex: 1; }
+  .artifact-meta { width: 100%; margin-left: 0; }
+}
+
+/* MoMA-inspired editorial layer: paper, ink, red signal, and a strict grid. */
+:root {
+  color: #111111;
+  background: #f3f3ef;
+  --moma-ink: #111111;
+  --moma-muted: #686863;
+  --moma-paper: #f3f3ef;
+  --moma-white: #ffffff;
+  --moma-line: #111111;
+  --moma-red: #e3262e;
+  --moma-soft-red: #fff1f0;
+}
+
+body {
+  color: var(--moma-ink);
+  background: var(--moma-paper);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.moma-app {
+  max-width: 1600px;
+  padding: 24px 32px 36px;
+}
+
+.moma-app .topbar {
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 36px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--moma-line);
+}
+
+.moma-app .brand { gap: 14px; }
+
+.moma-app .brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 0;
+  color: var(--moma-white);
+  background: var(--moma-ink);
+  box-shadow: none;
+  font-size: 24px;
+  letter-spacing: -.08em;
+}
+
+.moma-app .brand-kicker,
+.moma-app .eyebrow {
+  margin-bottom: 6px;
+  color: var(--moma-red);
+  font-size: 10px;
+  letter-spacing: .18em;
+}
+
+.moma-app h1 {
+  color: var(--moma-ink);
+  font-size: 25px;
+  letter-spacing: -.045em;
+}
+
+.moma-app .topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  flex: 1;
+  margin-left: 10px;
+  color: var(--moma-ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.moma-app .topbar-nav span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 8px 1px 0;
+  background: var(--moma-red);
+}
+
+.moma-app .topbar-actions { gap: 8px; }
+
+.moma-app .runtime-badge,
+.moma-app .job-status,
+.moma-app .state-pill {
+  border-radius: 0;
+  border-color: var(--moma-line);
+  color: var(--moma-ink);
+  background: transparent;
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+
+.moma-app .runtime-badge.online,
+.moma-app .job-status.complete,
+.moma-app .state-pill.ready {
+  color: var(--moma-red);
+  border-color: var(--moma-red);
+  background: transparent;
+}
+
+.moma-app .runtime-badge.offline,
+.moma-app .job-status.failed,
+.moma-app .state-pill.missing {
+  color: var(--moma-red);
+  border-color: var(--moma-red);
+  background: var(--moma-soft-red);
+}
+
+.moma-app .job-status.running,
+.moma-app .state-pill.downloading {
+  color: var(--moma-ink);
+  border-color: var(--moma-ink);
+  background: #e8e8e2;
+}
+
+.moma-app .language-switch {
+  display: flex;
+  border: 1px solid var(--moma-line);
+  background: var(--moma-white);
+}
+
+.moma-app .language-button {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 0;
+  color: var(--moma-ink);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.moma-app .language-button + .language-button { border-left: 1px solid var(--moma-line); }
+
+.moma-app .language-button:hover { color: var(--moma-red); }
+
+.moma-app .language-button.active {
+  color: var(--moma-white);
+  background: var(--moma-ink);
+}
+
+.moma-app .icon-button {
+  width: 30px;
+  height: 30px;
+  border-color: var(--moma-line);
+  border-radius: 0;
+  color: var(--moma-ink);
+  background: var(--moma-white);
+}
+
+.moma-app .icon-button:hover {
+  color: var(--moma-white);
+  border-color: var(--moma-red);
+  background: var(--moma-red);
+}
+
+.moma-app .workspace {
+  grid-template-columns: minmax(340px, .72fr) minmax(480px, 1.28fr);
+  gap: 36px;
+}
+
+.moma-app .control-column,
+.moma-app .result-column {
+  border: 0;
+  border-top: 1px solid var(--moma-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.moma-app .control-column {
+  padding: 22px 36px 24px 0;
+  border-right: 1px solid var(--moma-line);
+}
+
+.moma-app .result-column { padding: 22px 0 0; }
+
+.moma-app .section-heading {
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.moma-app .model-heading { margin-top: 34px; }
+
+.moma-app .step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 0;
+  color: var(--moma-white);
+  background: var(--moma-red);
+  font-size: 10px;
+}
+
+.moma-app h2 {
+  color: var(--moma-ink);
+  font-size: 18px;
+  letter-spacing: -.035em;
+}
+
+.moma-app .drop-zone {
+  min-height: 190px;
+  border: 1px dashed var(--moma-line);
+  border-radius: 0;
+  background: var(--moma-white);
+}
+
+.moma-app .drop-zone:hover,
+.moma-app .drop-zone:focus-visible,
+.moma-app .drop-zone.dragging {
+  border-color: var(--moma-red);
+  background: var(--moma-soft-red);
+  transform: none;
+}
+
+.moma-app .drop-empty { gap: 8px; color: var(--moma-muted); }
+
+.moma-app .drop-empty strong {
+  color: var(--moma-ink);
+  font-size: 15px;
+  text-decoration: underline;
+  text-decoration-color: var(--moma-red);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.moma-app .drop-empty span { font-size: 12px; }
+
+.moma-app .upload-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--moma-ink);
+  border-radius: 0;
+  color: var(--moma-red);
+}
+
+.moma-app .drop-selected img { border-radius: 0; }
+
+.moma-app .file-copy strong { color: var(--moma-ink); }
+.moma-app .helper-copy { max-width: 560px; color: var(--moma-muted); }
+
+.moma-app .remove-button {
+  border-radius: 0;
+  color: var(--moma-ink);
+}
+
+.moma-app .remove-button:hover {
+  color: var(--moma-white);
+  background: var(--moma-red);
+}
+
+.moma-app .model-card {
+  min-height: 78px;
+  padding: 14px;
+  border: 1px solid var(--moma-line);
+  border-left: 6px solid var(--moma-line);
+  border-radius: 0;
+  background: var(--moma-white);
+}
+
+.moma-app .model-card.ready { border-color: var(--moma-line); border-left-color: var(--moma-red); background: var(--moma-white); }
+
+.moma-app .model-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  color: var(--moma-white);
+  background: var(--moma-ink);
+}
+
+.moma-app .model-copy span,
+.moma-app .download-heading span,
+.moma-app .field-label,
+.moma-app .advanced-panel summary,
+.moma-app .range-field,
+.moma-app .resolution-field,
+.moma-app .toggle-field { color: var(--moma-muted); }
+
+.moma-app .download-panel {
+  padding: 16px;
+  border: 1px solid var(--moma-line);
+  border-radius: 0;
+  color: var(--moma-white);
+  background: var(--moma-ink);
+}
+
+.moma-app .download-heading strong { color: var(--moma-white); }
+.moma-app .download-heading > span { color: var(--moma-red); }
+.moma-app .progress-track,
+.moma-app .generation-progress-track { border-radius: 0; background: #3b3b38; }
+.moma-app .progress-fill { border-radius: 0; background: var(--moma-red); }
+.moma-app .download-actions .secondary-button { color: var(--moma-ink); background: var(--moma-white); }
+.moma-app .download-actions .secondary-button:hover:not(.disabled) { color: var(--moma-white); background: var(--moma-red); }
+.moma-app .download-actions .text-button { color: var(--moma-white); }
+
+.moma-app .select-control {
+  border-color: var(--moma-line);
+  border-radius: 0;
+  color: var(--moma-ink);
+  background: var(--moma-white);
+}
+
+.moma-app .select-control:focus { border-color: var(--moma-red); box-shadow: 0 0 0 2px rgba(227, 38, 46, .18); }
+
+.moma-app .advanced-panel { border-color: var(--moma-line); }
+.moma-app .advanced-panel summary { color: var(--moma-ink); }
+.moma-app .summary-chevron { color: var(--moma-red); }
+.moma-app input[type="range"] { accent-color: var(--moma-red); }
+
+.moma-app .segmented {
+  gap: 0;
+  padding: 0;
+  border-color: var(--moma-line);
+  border-radius: 0;
+  background: var(--moma-white);
+}
+
+.moma-app .segmented button {
+  border-radius: 0;
+  color: var(--moma-ink);
+}
+
+.moma-app .segmented button + button { border-left: 1px solid var(--moma-line); }
+.moma-app .segmented button.active { color: var(--moma-white); background: var(--moma-red); box-shadow: none; }
+.moma-app .field-hint { color: var(--moma-muted); }
+.moma-app .fake-checkbox { border-color: var(--moma-line); border-radius: 0; background: var(--moma-white); }
+.moma-app .toggle-field input:checked + .fake-checkbox { border-color: var(--moma-red); background: var(--moma-red); box-shadow: inset 0 0 0 4px var(--moma-white); }
+
+.moma-app .action-area { margin-top: 26px; }
+
+.moma-app .primary-button,
+.moma-app .secondary-button,
+.moma-app .cancel-button {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.moma-app .primary-button { color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .primary-button:hover:not(:disabled) { background: var(--moma-red); transform: none; box-shadow: none; }
+.moma-app .primary-button:disabled { color: #92928c; background: #d9d9d3; }
+.moma-app .secondary-button { border-color: var(--moma-line); color: var(--moma-ink); background: var(--moma-white); }
+.moma-app .secondary-button:hover:not(.disabled) { border-color: var(--moma-red); color: var(--moma-white); background: var(--moma-red); }
+.moma-app .cancel-button { border-color: var(--moma-red); color: var(--moma-red); background: var(--moma-soft-red); }
+.moma-app .cancel-button:hover { color: var(--moma-white); background: var(--moma-red); }
+.moma-app .blocking-message { color: var(--moma-muted); }
+
+.moma-app .privacy-note {
+  padding-top: 18px;
+  border-top: 1px solid var(--moma-line);
+  color: var(--moma-muted);
+}
+
+.moma-app .privacy-note span:first-child { color: var(--moma-red); }
+
+.moma-app .result-toolbar {
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--moma-line);
+}
+
+.moma-app .result-toolbar h2 { margin-top: 2px; font-size: 21px; }
+
+.moma-app .viewer-shell {
+  min-height: 540px;
+  border-color: var(--moma-line);
+  border-radius: 0;
+  background: #deddd7;
+}
+
+.moma-app #viewer-canvas { min-height: 540px; }
+.moma-app .empty-view,
+.moma-app .loading-view,
+.moma-app .error-view { color: var(--moma-muted); }
+.moma-app .empty-view strong,
+.moma-app .loading-view strong,
+.moma-app .error-view strong { color: var(--moma-ink); }
+.moma-app .empty-cube { border-color: var(--moma-ink); border-radius: 0; color: var(--moma-ink); }
+.moma-app .loading-view { background: rgba(222, 221, 215, .82); backdrop-filter: blur(3px); }
+.moma-app .spinner { border-color: #b9b9b2; border-top-color: var(--moma-red); border-radius: 0; }
+.moma-app .error-icon { border-radius: 0; color: var(--moma-white); background: var(--moma-red); }
+
+.moma-app .result-actions {
+  padding: 14px 0 18px;
+  border-bottom: 1px solid var(--moma-line);
+}
+
+.moma-app .artifact-meta { color: var(--moma-muted); }
+.moma-app .history-header { border-top: 0; color: var(--moma-ink); }
+.moma-app .history-header span:last-child { color: var(--moma-red); }
+.moma-app .history-empty { border-color: var(--moma-line); border-radius: 0; color: var(--moma-muted); }
+.moma-app .history-item { border-color: var(--moma-line); border-radius: 0; color: var(--moma-ink); background: var(--moma-white); }
+.moma-app .history-item:hover { border-color: var(--moma-red); background: var(--moma-soft-red); }
+.moma-app .history-cube { border-radius: 0; color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .history-item small { color: var(--moma-muted); }
+
+.moma-app .toast {
+  right: 32px;
+  bottom: 28px;
+  border-color: var(--moma-line);
+  border-radius: 0;
+  color: var(--moma-white);
+  background: var(--moma-ink);
+  box-shadow: none;
+}
+
+.moma-app .toast.success,
+.moma-app .toast.error { border-color: var(--moma-red); }
+.moma-app button:focus-visible,
+.moma-app a:focus-visible,
+.moma-app select:focus-visible,
+.moma-app .drop-zone:focus-visible { outline: 2px solid var(--moma-red); outline-offset: 3px; }
+
+@media (max-width: 900px) {
+  .moma-app .topbar { align-items: center; }
+  .moma-app .topbar-nav { display: none; }
+  .moma-app .workspace { gap: 28px; }
+  .moma-app .control-column { padding: 22px 0 24px; border-right: 0; }
+  .moma-app .result-column { padding-top: 22px; }
+  .moma-app .viewer-shell,
+  .moma-app #viewer-canvas { min-height: 440px; }
+}
+
+@media (max-width: 520px) {
+  .moma-app { padding: 18px 14px 28px; }
+  .moma-app .topbar { align-items: flex-start; margin-bottom: 26px; }
+  .moma-app .brand-mark { width: 42px; height: 42px; font-size: 21px; }
+  .moma-app h1 { font-size: 21px; }
+  .moma-app .runtime-badge { display: none; }
+  .moma-app .control-column,
+  .moma-app .result-column { padding-right: 0; padding-left: 0; }
+  .moma-app .viewer-shell,
+  .moma-app #viewer-canvas { min-height: 350px; }
+  .moma-app .result-toolbar h2 { font-size: 18px; }
+  .moma-app .result-actions .secondary-button { flex: 1; }
+  .moma-app .toast { right: 14px; bottom: 18px; }
+}
+
+/* Visual correction: less product chrome, more MoMA-like editorial restraint. */
+:root {
+  --moma-ink: #000000;
+  --moma-paper: #f6f6f3;
+  --moma-white: #ffffff;
+  --moma-muted: #74746f;
+  --moma-line: #000000;
+  --moma-accent: #ff8f1c;
+  --moma-soft-accent: #fff3e4;
+}
+
+body { background: var(--moma-paper); }
+
+.moma-app {
+  max-width: 1460px;
+  padding: 22px 44px 52px;
+}
+
+.moma-app .topbar {
+  align-items: center;
+  margin-bottom: 56px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--moma-ink);
+}
+
+.moma-app .brand { gap: 12px; }
+
+.moma-app .brand-mark {
+  width: 40px;
+  height: 40px;
+  font-size: 21px;
+}
+
+.moma-app h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.05em;
+}
+
+.moma-app .brand-kicker,
+.moma-app .topbar-nav,
+.moma-app .runtime-badge { display: none; }
+
+.moma-app .topbar-actions { gap: 18px; }
+
+.moma-app .language-switch {
+  gap: 14px;
+  border: 0;
+  background: transparent;
+}
+
+.moma-app .language-button {
+  min-width: auto;
+  height: 28px;
+  padding: 0 0 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--moma-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.moma-app .language-button + .language-button { border-left: 0; }
+.moma-app .language-button:hover { color: var(--moma-ink); }
+.moma-app .language-button.active { color: var(--moma-ink); background: transparent; border-bottom-color: var(--moma-accent); }
+
+.moma-app .icon-button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-bottom: 2px solid var(--moma-ink);
+  border-radius: 0;
+  background: transparent;
+}
+
+.moma-app .icon-button:hover { color: var(--moma-accent); border-color: var(--moma-accent); background: transparent; }
+
+.moma-app .workspace {
+  grid-template-columns: minmax(340px, .7fr) minmax(560px, 1.3fr);
+  gap: 52px;
+}
+
+.moma-app .control-column,
+.moma-app .result-column {
+  border-top: 1px solid var(--moma-line);
+}
+
+.moma-app .control-column {
+  padding: 26px 52px 28px 0;
+  border-right: 1px solid var(--moma-line);
+}
+
+.moma-app .result-column { padding: 26px 0 0; }
+
+.moma-app .section-heading {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.moma-app .model-heading { margin-top: 52px; }
+
+.moma-app .section-heading h2 {
+  max-width: 460px;
+  color: var(--moma-ink);
+  font-size: 32px;
+  line-height: 1.06;
+  letter-spacing: -.055em;
+}
+
+.moma-app .model-heading h2 { font-size: 20px; letter-spacing: -.035em; }
+
+.moma-app .drop-zone {
+  min-height: 222px;
+  border: 1px solid var(--moma-ink);
+  border-radius: 0;
+  background: var(--moma-white);
+}
+
+.moma-app .drop-zone:hover,
+.moma-app .drop-zone:focus-visible,
+.moma-app .drop-zone.dragging {
+  border-color: var(--moma-accent);
+  background: var(--moma-soft-accent);
+}
+
+.moma-app .drop-empty { gap: 9px; color: var(--moma-muted); }
+
+.moma-app .upload-icon {
+  width: auto;
+  height: auto;
+  margin-bottom: 7px;
+  border: 0;
+  color: var(--moma-accent);
+  font-size: 36px;
+}
+
+.moma-app .drop-empty strong {
+  color: var(--moma-ink);
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.moma-app .drop-empty span { font-size: 14px; }
+.moma-app .helper-copy { margin-top: 14px; color: var(--moma-muted); font-size: 14px; line-height: 1.5; }
+.moma-app .drop-selected img { border-radius: 0; }
+
+.moma-app .model-card {
+  min-height: 76px;
+  padding: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--moma-line);
+  border-bottom: 1px solid var(--moma-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.moma-app .model-card.ready { border-color: var(--moma-line); background: transparent; }
+.moma-app .model-copy { gap: 6px; }
+.moma-app .model-copy strong { font-size: 16px; }
+.moma-app .model-copy span { color: var(--moma-muted); font-size: 13px; }
+
+.moma-app .state-pill {
+  padding: 0 0 0 12px;
+  border: 0;
+  border-left: 1px solid var(--moma-line);
+  border-radius: 0;
+  color: var(--moma-ink);
+  background: transparent;
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.moma-app .state-pill.ready,
+.moma-app .state-pill.downloading,
+.moma-app .state-pill.missing { color: var(--moma-ink); border-color: var(--moma-line); background: transparent; }
+
+.moma-app .platform-guide {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 19px 20px 21px;
+  border: 1px solid var(--moma-line);
+  border-left: 8px solid var(--moma-line);
+  background: var(--moma-white);
+}
+
+.moma-app .platform-guide-kicker {
+  color: var(--moma-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.moma-app .platform-guide-title {
+  color: var(--moma-ink);
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -.04em;
+}
+
+.moma-app .platform-guide-message {
+  max-width: 46rem;
+  color: var(--moma-muted);
+  font-size: 14px;
+  line-height: 1.48;
+}
+
+.moma-app .platform-guide-hardware {
+  color: var(--moma-ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.moma-app .platform-guide.mac {
+  border-left-color: var(--moma-accent);
+  background: var(--moma-soft-accent);
+}
+
+.moma-app .platform-guide.windows {
+  border-left-color: #315ff5;
+  background: #edf1ff;
+}
+
+.moma-app .platform-guide.windows .platform-guide-hardware { color: #315ff5; }
+
+.moma-app .platform-guide.docker {
+  border-left-color: #777772;
+  background: #ecece8;
+}
+
+.moma-app .download-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 0;
+  border-left: 4px solid var(--moma-accent);
+  border-radius: 0;
+  color: var(--moma-ink);
+  background: var(--moma-white);
+}
+
+.moma-app .download-heading strong { color: var(--moma-ink); font-size: 14px; }
+.moma-app .download-heading span { color: var(--moma-muted); font-size: 12px; }
+.moma-app .download-heading > span { color: var(--moma-ink); font-size: 13px; }
+.moma-app .progress-track { height: 5px; border-radius: 0; background: #deded9; }
+.moma-app .progress-fill { border-radius: 0; background: var(--moma-accent); }
+.moma-app .progress-fill.indeterminate {
+  width: 34% !important;
+  animation: jic-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes jic-indeterminate {
+  0%, 100% { opacity: .45; transform: translateX(-18%); }
+  50% { opacity: 1; transform: translateX(180%); }
+}
+.moma-app .download-actions .secondary-button { color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .download-actions .secondary-button:hover:not(.disabled) { color: var(--moma-ink); background: var(--moma-accent); }
+.moma-app .download-actions .secondary-button:disabled { cursor: not-allowed; opacity: .45; }
+.moma-app .download-actions .text-button { color: var(--moma-ink); }
+.moma-app .download-panel.mac-download { border-left-color: var(--moma-accent); }
+.moma-app .download-panel.windows-download { border-left-color: #315ff5; color: var(--moma-white); background: #151b32; }
+.moma-app .download-panel.windows-download .download-heading strong,
+.moma-app .download-panel.windows-download .download-heading > span { color: var(--moma-white); }
+.moma-app .download-panel.windows-download .download-heading span { color: #c8cce0; }
+.moma-app .download-panel.windows-download .progress-track { background: #454a61; }
+.moma-app .download-panel.windows-download .progress-fill { background: #6e8cff; }
+.moma-app .download-panel.windows-download .download-actions .secondary-button { color: var(--moma-ink); background: var(--moma-white); }
+.moma-app .download-panel.windows-download .download-actions .secondary-button:hover:not(:disabled) { color: var(--moma-white); background: #315ff5; }
+.moma-app .download-panel.windows-download .download-actions .text-button { color: var(--moma-white); }
+.moma-app .download-panel.docker-download { border-left-color: #777772; }
+
+.moma-app .field-row { margin-top: 28px; }
+.moma-app .field-label { color: var(--moma-ink); font-size: 14px; }
+.moma-app .select-control { min-width: 210px; padding: 10px 12px; border-color: var(--moma-line); border-radius: 0; font-size: 14px; }
+.moma-app .select-control:focus { border-color: var(--moma-accent); box-shadow: 0 0 0 2px rgba(255, 143, 28, .18); }
+
+.moma-app .advanced-panel { margin-top: 24px; border-color: var(--moma-line); }
+.moma-app .advanced-panel summary { padding: 17px 0 10px; color: var(--moma-ink); font-size: 14px; }
+.moma-app .summary-chevron { color: var(--moma-ink); }
+.moma-app .advanced-content { gap: 20px; padding: 12px 0 7px; }
+.moma-app .range-field,
+.moma-app .resolution-field { color: var(--moma-ink); font-size: 13px; }
+.moma-app output { color: var(--moma-ink); }
+.moma-app input[type="range"] { accent-color: var(--moma-ink); }
+
+.moma-app .segmented {
+  border-color: var(--moma-line);
+  border-radius: 0;
+  background: var(--moma-white);
+}
+
+.moma-app .segmented button { min-height: 40px; border-radius: 0; color: var(--moma-ink); font-size: 13px; }
+.moma-app .segmented button + button { border-color: var(--moma-line); }
+.moma-app .segmented button.active { color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .field-hint { color: var(--moma-muted); font-size: 12px; }
+.moma-app .toggle-field { color: var(--moma-ink); font-size: 13px; }
+.moma-app .fake-checkbox { width: 18px; height: 18px; border-color: var(--moma-line); border-radius: 0; }
+.moma-app .toggle-field input:checked + .fake-checkbox { border-color: var(--moma-ink); background: var(--moma-ink); }
+
+.moma-app .action-area { margin-top: 30px; }
+.moma-app .primary-button,
+.moma-app .secondary-button,
+.moma-app .cancel-button { min-height: 48px; border-radius: 0; font-size: 14px; box-shadow: none; }
+.moma-app .primary-button { color: var(--moma-ink); background: var(--moma-accent); }
+.moma-app .primary-button:hover:not(:disabled) { color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .primary-button:disabled { color: #777772; background: #deded9; }
+.moma-app .cancel-button { color: var(--moma-ink); border-color: var(--moma-ink); background: transparent; }
+.moma-app .cancel-button:hover { color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .blocking-message { margin-top: 12px; color: var(--moma-muted); text-align: left; font-size: 12px; }
+
+.moma-app .result-toolbar { padding: 0 0 18px; border-bottom: 1px solid var(--moma-line); }
+.moma-app .result-toolbar h2 { margin-top: 0; color: var(--moma-ink); font-size: 24px; letter-spacing: -.04em; }
+.moma-app .job-status { position: relative; padding: 0 0 0 13px; border: 0; border-radius: 0; color: var(--moma-ink); background: transparent; font-size: 11px; letter-spacing: .04em; }
+.moma-app .job-status::before { content: ""; position: absolute; top: 50%; left: 0; width: 7px; height: 7px; background: var(--moma-accent); transform: translateY(-50%); }
+.moma-app .job-status.running::before { background: var(--moma-ink); }
+.moma-app .job-status.failed::before { background: #c62828; }
+
+.moma-app .viewer-shell {
+  min-height: 640px;
+  border-color: var(--moma-line);
+  border-radius: 0;
+  background: #e8e8e3;
+}
+
+.moma-app #viewer-canvas { min-height: 640px; }
+.moma-app .empty-view,
+.moma-app .loading-view,
+.moma-app .error-view { color: var(--moma-muted); }
+.moma-app .empty-view strong,
+.moma-app .loading-view strong,
+.moma-app .error-view strong { color: var(--moma-ink); font-size: 18px; font-weight: 500; }
+.moma-app .loading-view { background: rgba(232, 232, 227, .86); }
+.moma-app .loading-view .generation-progress-track { height: 5px; border-radius: 0; background: #cacac4; }
+.moma-app .spinner { border-color: #bdbdb7; border-top-color: var(--moma-accent); border-radius: 0; }
+.moma-app .error-icon { border-radius: 0; color: var(--moma-white); background: #c62828; }
+
+.moma-app .result-actions { padding: 16px 0 20px; border-bottom: 1px solid var(--moma-line); }
+.moma-app .secondary-button { border-color: var(--moma-line); color: var(--moma-ink); background: var(--moma-white); }
+.moma-app .secondary-button:hover:not(.disabled) { border-color: var(--moma-ink); color: var(--moma-white); background: var(--moma-ink); }
+.moma-app .artifact-meta { color: var(--moma-muted); font-size: 12px; }
+.moma-app .history-header { padding: 18px 0 12px; border-top: 0; color: var(--moma-ink); font-size: 13px; }
+.moma-app .history-header span:last-child { color: var(--moma-ink); }
+.moma-app .history-empty { padding: 18px 0; border: 0; border-top: 1px solid var(--moma-line); border-radius: 0; color: var(--moma-muted); text-align: left; font-size: 13px; }
+.moma-app .history-item { padding: 12px 0; border: 0; border-top: 1px solid var(--moma-line); border-radius: 0; color: var(--moma-ink); background: transparent; }
+.moma-app .history-item:hover { border-color: var(--moma-accent); background: transparent; }
+.moma-app .history-item strong { font-size: 13px; }
+.moma-app .history-item small { color: var(--moma-muted); font-size: 11px; }
+.moma-app .toast { right: 44px; bottom: 32px; border-color: var(--moma-ink); border-radius: 0; color: var(--moma-white); background: var(--moma-ink); box-shadow: none; }
+.moma-app .toast.success { border-color: var(--moma-accent); }
+
+@media (max-width: 900px) {
+  .moma-app { padding: 20px 24px 40px; }
+  .moma-app .topbar { margin-bottom: 40px; }
+  .moma-app .workspace { gap: 34px; }
+  .moma-app .control-column { padding: 24px 0 28px; border-right: 0; }
+  .moma-app .result-column { padding-top: 24px; }
+  .moma-app .viewer-shell,
+  .moma-app #viewer-canvas { min-height: 460px; }
+}
+
+@media (max-width: 520px) {
+  .moma-app { padding: 16px 16px 32px; }
+  .moma-app .topbar { margin-bottom: 32px; }
+  .moma-app h1 { font-size: 21px; }
+  .moma-app .section-heading h2 { font-size: 28px; }
+  .moma-app .model-heading { margin-top: 42px; }
+  .moma-app .select-control { min-width: 170px; }
+  .moma-app .viewer-shell,
+  .moma-app #viewer-canvas { min-height: 350px; }
+  .moma-app .toast { right: 16px; bottom: 18px; }
+}
+
+/* macOS utility pass: native light-mode surfaces, restrained controls, no decorative chrome. */
+:root {
+  color-scheme: light;
+  --mac-window: #e9e9ee;
+  --mac-surface: #ffffff;
+  --mac-surface-soft: #f2f2f7;
+  --mac-ink: #1d1d1f;
+  --mac-muted: #6e6e73;
+  --mac-subtle: #8e8e93;
+  --mac-line: #c7c7cc;
+  --mac-blue: #007aff;
+  --mac-blue-hover: #0066d6;
+  --mac-green: #34c759;
+  --mac-orange: #ff9f0a;
+  --mac-red: #ff3b30;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: var(--mac-ink);
+  background: var(--mac-window);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang TC", "Noto Sans TC", "Helvetica Neue", Arial, sans-serif;
+  font-synthesis: none;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.macos-app {
+  max-width: 1440px;
+  padding: 0 28px 32px;
+}
+
+.macos-app .topbar {
+  align-items: center;
+  min-height: 64px;
+  gap: 20px;
+  margin-bottom: 22px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--mac-line);
+}
+
+.macos-app .brand {
+  gap: 10px;
+}
+
+.macos-app .brand-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--mac-line);
+  border-radius: 8px;
+  color: var(--mac-ink);
+  background: var(--mac-surface);
+  box-shadow: none;
+}
+
+.macos-app .brand-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.macos-app h1 {
+  color: var(--mac-ink);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+.macos-app .brand-kicker,
+.macos-app .topbar-nav,
+.macos-app .runtime-badge {
+  display: none;
+}
+
+.macos-app .topbar-actions {
+  gap: 8px;
+}
+
+.macos-app .language-switch {
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--mac-line);
+  border-radius: 7px;
+  background: #e9e9ed;
+}
+
+.macos-app .language-button {
+  min-width: 34px;
+  height: 25px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--mac-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.macos-app .language-button + .language-button {
+  border-left: 0;
+}
+
+.macos-app .language-button:hover {
+  color: var(--mac-ink);
+}
+
+.macos-app .language-button.active {
+  color: var(--mac-ink);
+  background: var(--mac-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+
+.macos-app .icon-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--mac-muted);
+  background: transparent;
+  font-size: 0;
+}
+
+.macos-app .icon-button:hover {
+  color: var(--mac-ink);
+  border-color: var(--mac-line);
+  background: var(--mac-surface);
+}
+
+.macos-app .ui-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.macos-app .workspace {
+  grid-template-columns: 370px minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.macos-app .control-column,
+.macos-app .result-column {
+  min-width: 0;
+  border: 1px solid rgba(199, 199, 204, .92);
+  border-radius: 12px;
+  background: var(--mac-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 8px 22px rgba(0, 0, 0, .04);
+  backdrop-filter: none;
+}
+
+.macos-app .control-column {
+  padding: 26px;
+}
+
+.macos-app .result-column {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.macos-app .section-heading {
+  display: block;
+  margin-bottom: 17px;
+}
+
+.macos-app .section-heading h2 {
+  max-width: 280px;
+  color: var(--mac-ink);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -.025em;
+}
+
+.macos-app .model-heading {
+  margin-top: 30px;
+  margin-bottom: 11px;
+}
+
+.macos-app .model-heading h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.macos-app .drop-zone {
+  min-height: 190px;
+  border: 1px dashed #c7c7cc;
+  border-radius: 10px;
+  background: #f7f7f9;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+
+.macos-app .drop-zone:hover,
+.macos-app .drop-zone:focus-visible,
+.macos-app .drop-zone.dragging {
+  border-color: var(--mac-blue);
+  background: #f2f7ff;
+  transform: none;
+}
+
+.macos-app .drop-empty {
+  gap: 6px;
+  color: var(--mac-muted);
+}
+
+.macos-app .upload-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 5px;
+  border: 0;
+  color: var(--mac-subtle);
+  background: transparent;
+}
+
+.macos-app .upload-icon .ui-icon {
+  width: 30px;
+  height: 30px;
+  stroke-width: 1.5;
+}
+
+.macos-app .drop-empty strong {
+  color: var(--mac-ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.macos-app .drop-empty span {
+  color: var(--mac-muted);
+  font-size: 13px;
+}
+
+.macos-app .helper-copy {
+  margin-top: 9px;
+  color: var(--mac-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.macos-app .drop-selected {
+  padding: 10px;
+}
+
+.macos-app .drop-selected img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: #e5e5ea;
+}
+
+.macos-app .file-copy {
+  gap: 3px;
+}
+
+.macos-app .file-copy strong {
+  color: var(--mac-ink);
+  font-size: 13px;
+}
+
+.macos-app .file-copy span {
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .remove-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  color: var(--mac-subtle);
+  background: transparent;
+  font-size: 0;
+}
+
+.macos-app .remove-button:hover {
+  color: var(--mac-ink);
+  background: #f2f2f7;
+}
+
+.macos-app .remove-button .ui-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
+.macos-app .model-card {
+  min-height: 64px;
+  padding: 11px 12px;
+  border: 1px solid var(--mac-line);
+  border-radius: 10px;
+  background: var(--mac-surface);
+  transition: none;
+}
+
+.macos-app .model-card.ready {
+  border-color: var(--mac-line);
+  background: var(--mac-surface);
+}
+
+.macos-app .model-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--mac-subtle);
+  background: transparent;
+}
+
+.macos-app .model-icon .ui-icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.35;
+}
+
+.macos-app .model-copy {
+  gap: 3px;
+}
+
+.macos-app .model-copy strong {
+  color: var(--mac-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .model-copy span {
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--mac-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.macos-app .state-pill::before,
+.macos-app .job-status::before {
+  content: "";
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a1a1a6;
+}
+
+.macos-app .state-pill.ready::before {
+  background: var(--mac-green);
+}
+
+.macos-app .state-pill.downloading::before,
+.macos-app .state-pill.loading::before {
+  background: var(--mac-blue);
+}
+
+.macos-app .state-pill.missing::before {
+  background: var(--mac-orange);
+}
+
+.macos-app .state-pill.ready,
+.macos-app .state-pill.downloading,
+.macos-app .state-pill.missing {
+  color: var(--mac-muted);
+  border: 0;
+  background: transparent;
+}
+
+.macos-app .platform-guide {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 9px;
+  margin-top: 14px;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid var(--mac-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.macos-app .platform-guide-title {
+  color: var(--mac-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.macos-app .platform-guide-message {
+  color: var(--mac-muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.macos-app .platform-guide-hardware {
+  grid-column: 1 / -1;
+  color: var(--mac-blue);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.macos-app .download-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--mac-line);
+  border-radius: 10px;
+  color: var(--mac-ink);
+  background: var(--mac-surface-soft);
+}
+
+.macos-app .download-heading {
+  margin-bottom: 11px;
+}
+
+.macos-app .download-heading div {
+  gap: 3px;
+}
+
+.macos-app .download-heading strong {
+  color: var(--mac-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.macos-app .download-heading span {
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .download-heading > span {
+  color: var(--mac-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.macos-app .progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #e5e5ea;
+}
+
+.macos-app .progress-fill {
+  border-radius: 999px;
+  background: var(--mac-blue);
+}
+
+.macos-app .progress-fill.indeterminate {
+  width: 34% !important;
+  animation: mac-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes mac-indeterminate {
+  0%, 100% { opacity: .45; transform: translateX(-18%); }
+  50% { opacity: 1; transform: translateX(180%); }
+}
+
+.macos-app .download-actions {
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.macos-app .download-actions .secondary-button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 7px;
+  color: #ffffff;
+  background: var(--mac-blue);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .download-actions .secondary-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--mac-blue-hover);
+}
+
+.macos-app .download-actions .secondary-button:disabled {
+  cursor: not-allowed;
+  color: var(--mac-subtle);
+  background: #e5e5ea;
+  opacity: 1;
+}
+
+.macos-app .download-actions .text-button {
+  min-height: 34px;
+  color: var(--mac-blue);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .field-row {
+  margin-top: 20px;
+}
+
+.macos-app .field-label {
+  color: var(--mac-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .select-control {
+  min-width: 170px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--mac-line);
+  border-radius: 7px;
+  color: var(--mac-ink);
+  background: #f9f9fb;
+  font-size: 13px;
+  outline: none;
+}
+
+.macos-app .select-control:focus {
+  border-color: var(--mac-blue);
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, .16);
+}
+
+.macos-app .advanced-panel {
+  margin-top: 19px;
+  border-top: 1px solid var(--mac-line);
+}
+
+.macos-app .advanced-panel summary {
+  align-items: center;
+  padding: 13px 0 8px;
+  color: var(--mac-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .summary-chevron {
+  display: grid;
+  place-items: center;
+  color: var(--mac-muted);
+}
+
+.macos-app .summary-chevron .ui-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.7;
+}
+
+.macos-app .advanced-content {
+  gap: 16px;
+  padding: 11px 0 4px;
+}
+
+.macos-app .range-field,
+.macos-app .resolution-field {
+  color: var(--mac-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.macos-app output {
+  color: var(--mac-ink);
+}
+
+.macos-app input[type="range"] {
+  accent-color: var(--mac-blue);
+}
+
+.macos-app .segmented {
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--mac-line);
+  border-radius: 7px;
+  background: #f2f2f7;
+}
+
+.macos-app .segmented button {
+  min-height: 32px;
+  border-radius: 5px;
+  color: var(--mac-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.macos-app .segmented button + button {
+  border-left: 0;
+}
+
+.macos-app .segmented button.active {
+  color: #ffffff;
+  background: var(--mac-blue);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+}
+
+.macos-app .field-hint {
+  color: var(--mac-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.macos-app .toggle-field {
+  color: var(--mac-ink);
+  font-size: 12px;
+}
+
+.macos-app .fake-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #b8b8bd;
+  border-radius: 4px;
+  background: var(--mac-surface);
+}
+
+.macos-app .toggle-field input:checked + .fake-checkbox {
+  border-color: var(--mac-blue);
+  background: var(--mac-blue);
+  box-shadow: inset 0 0 0 3px var(--mac-surface);
+}
+
+.macos-app .action-area {
+  margin-top: 22px;
+}
+
+.macos-app .primary-button,
+.macos-app .secondary-button,
+.macos-app .cancel-button {
+  min-height: 40px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.macos-app .primary-button {
+  color: #ffffff;
+  background: var(--mac-blue);
+}
+
+.macos-app .primary-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--mac-blue-hover);
+  transform: none;
+  box-shadow: none;
+}
+
+.macos-app .primary-button:disabled {
+  color: #8e8e93;
+  background: #e5e5ea;
+}
+
+.macos-app .cancel-button {
+  color: var(--mac-blue);
+  border-color: var(--mac-line);
+  background: var(--mac-surface);
+}
+
+.macos-app .cancel-button:hover {
+  color: var(--mac-blue-hover);
+  background: #f2f2f7;
+}
+
+.macos-app .blocking-message {
+  margin-top: 9px;
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .result-toolbar {
+  min-height: 38px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--mac-line);
+}
+
+.macos-app .result-toolbar h2 {
+  margin-top: 0;
+  color: var(--mac-ink);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+.macos-app .job-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--mac-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.macos-app .job-status.running::before {
+  background: var(--mac-blue);
+}
+
+.macos-app .job-status.complete::before {
+  background: var(--mac-green);
+}
+
+.macos-app .job-status.failed::before {
+  background: var(--mac-red);
+}
+
+.macos-app .viewer-shell {
+  min-height: 600px;
+  border: 1px solid var(--mac-line);
+  border-radius: 10px;
+  background: #e5e5ea;
+}
+
+.macos-app #viewer-canvas {
+  min-height: 600px;
+}
+
+.macos-app .empty-view,
+.macos-app .loading-view,
+.macos-app .error-view {
+  gap: 8px;
+  color: var(--mac-muted);
+}
+
+.macos-app .empty-model-icon {
+  width: 70px;
+  height: 70px;
+  margin-bottom: 5px;
+  fill: none;
+  stroke: var(--mac-subtle);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.25;
+}
+
+.macos-app .empty-view strong,
+.macos-app .loading-view strong,
+.macos-app .error-view strong {
+  color: var(--mac-ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.macos-app .loading-view {
+  background: rgba(229, 229, 234, .9);
+}
+
+.macos-app .loading-view .generation-progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #d2d2d7;
+}
+
+.macos-app .spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #d2d2d7;
+  border-top-color: var(--mac-blue);
+  border-radius: 50%;
+}
+
+.macos-app .error-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: var(--mac-red);
+}
+
+.macos-app .error-icon .ui-icon {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.7;
+}
+
+.macos-app .error-icon .ui-icon circle:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.macos-app .result-actions {
+  gap: 8px;
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--mac-line);
+}
+
+.macos-app .result-actions .secondary-button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--mac-line);
+  border-radius: 7px;
+  color: var(--mac-ink);
+  background: var(--mac-surface);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .result-actions .secondary-button:hover:not(.disabled) {
+  border-color: var(--mac-blue);
+  color: var(--mac-blue);
+  background: var(--mac-surface);
+}
+
+.macos-app .artifact-meta {
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .history-header {
+  padding: 16px 0 10px;
+  border-top: 0;
+  color: var(--mac-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.macos-app .history-header span:last-child {
+  color: var(--mac-muted);
+  font-weight: 400;
+}
+
+.macos-app .history-empty {
+  padding: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--mac-line);
+  border-radius: 0;
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .history-item {
+  padding: 11px 0;
+  border: 0;
+  border-top: 1px solid var(--mac-line);
+  border-radius: 0;
+  color: var(--mac-ink);
+  background: transparent;
+}
+
+.macos-app .history-item:hover {
+  border-color: var(--mac-line);
+  background: #f8f8fa;
+}
+
+.macos-app .history-item strong {
+  font-size: 12px;
+}
+
+.macos-app .history-item small {
+  color: var(--mac-muted);
+  font-size: 11px;
+}
+
+.macos-app .toast {
+  right: 28px;
+  bottom: 24px;
+  padding: 11px 14px;
+  border: 1px solid var(--mac-line);
+  border-radius: 10px;
+  color: var(--mac-ink);
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+  font-size: 12px;
+}
+
+.macos-app .toast.success {
+  border-color: #b8e8c4;
+}
+
+@media (max-width: 900px) {
+  .macos-app {
+    padding: 0 20px 28px;
+  }
+
+  .macos-app .workspace {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .macos-app .control-column,
+  .macos-app .result-column {
+    padding: 22px;
+  }
+
+  .macos-app .viewer-shell,
+  .macos-app #viewer-canvas {
+    min-height: 480px;
+  }
+}
+
+@media (max-width: 520px) {
+  .macos-app {
+    padding: 0 12px 22px;
+  }
+
+  .macos-app .topbar {
+    min-width: 0;
+    min-height: 58px;
+    margin-bottom: 16px;
+  }
+
+  .macos-app .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .macos-app .brand h1 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .macos-app .topbar-actions {
+    flex: 0 0 auto;
+    gap: 3px;
+  }
+
+  .macos-app .language-switch {
+    flex: 0 0 auto;
+  }
+
+  .macos-app .language-button {
+    min-width: 30px;
+    padding: 0 6px;
+  }
+
+  .macos-app .workspace,
+  .macos-app .control-column,
+  .macos-app .result-column {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .macos-app .control-column,
+  .macos-app .result-column {
+    padding: 17px;
+    border-radius: 10px;
+  }
+
+  .macos-app .section-heading h2 {
+    max-width: 270px;
+    font-size: 21px;
+  }
+
+  .macos-app .model-heading h2 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  .macos-app .model-heading {
+    margin-top: 25px;
+  }
+
+  .macos-app .field-row {
+    min-width: 0;
+    align-items: center;
+  }
+
+  .macos-app .select-control {
+    width: 150px;
+    min-width: 0;
+    max-width: 50%;
+  }
+
+  .macos-app .viewer-shell,
+  .macos-app #viewer-canvas {
+    min-height: 350px;
+  }
+
+  .macos-app .result-actions .secondary-button {
+    flex: 1;
+  }
+
+  .macos-app .artifact-meta {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .macos-app .toast {
+    right: 12px;
+    bottom: 16px;
+  }
+}
+
+/* mlx-serve reference pass: a quiet, full-width macOS workbench. */
+:root {
+  --mac-window: #ffffff;
+  --mac-surface: #ffffff;
+  --mac-surface-soft: #f6f6f7;
+  --mac-ink: #1d1d1f;
+  --mac-muted: #6e6e73;
+  --mac-subtle: #8e8e93;
+  --mac-line: #e5e5e7;
+  --mac-line-strong: #d2d2d7;
+  --mac-blue: #007aff;
+  --mac-blue-hover: #006ee6;
+  --mac-green: #34c759;
+  --mac-orange: #ff9f0a;
+  --mac-red: #ff3b30;
+}
+
+html,
+body {
+  background: #ffffff;
+}
+
+body {
+  color: var(--mac-ink);
+}
+
+.macos-app {
+  width: 100%;
+  max-width: 1880px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0;
+  background: #ffffff;
+}
+
+.macos-app .topbar {
+  min-height: 58px;
+  margin: 0;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--mac-line);
+}
+
+.macos-app .brand {
+  gap: 8px;
+}
+
+.macos-app .brand-mark {
+  width: 27px;
+  height: 27px;
+  border: 0;
+  border-radius: 0;
+  color: var(--mac-subtle);
+  background: transparent;
+}
+
+.macos-app .brand-icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.45;
+}
+
+.macos-app h1 {
+  color: var(--mac-ink);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.macos-app .topbar-actions {
+  gap: 8px;
+}
+
+.macos-app .language-switch {
+  padding: 2px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 8px;
+  background: #f2f2f7;
+}
+
+.macos-app .language-button {
+  min-width: 34px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--mac-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.macos-app .language-button.active {
+  color: var(--mac-ink);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .10);
+}
+
+.macos-app .icon-button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--mac-muted);
+  background: transparent;
+}
+
+.macos-app .icon-button:hover {
+  color: var(--mac-ink);
+  border-color: var(--mac-line-strong);
+  background: var(--mac-surface-soft);
+}
+
+.macos-app .workspace {
+  grid-template-columns: minmax(420px, .88fr) minmax(560px, 1.04fr);
+  gap: 0;
+  min-height: calc(100vh - 58px);
+  align-items: stretch;
+}
+
+.macos-app .control-column,
+.macos-app .result-column {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.macos-app .control-column {
+  padding: 34px 40px 42px;
+}
+
+.macos-app .result-column {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 58px);
+  padding: 31px 38px 30px;
+  border-left: 1px solid var(--mac-line);
+}
+
+.macos-app .section-heading {
+  display: block;
+  margin: 0 0 18px;
+}
+
+.macos-app .section-heading h2 {
+  max-width: none;
+  color: var(--mac-ink);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.macos-app .model-heading {
+  margin-top: 35px;
+  margin-bottom: 13px;
+}
+
+.macos-app .model-heading h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+.macos-app .drop-zone {
+  min-height: 156px;
+  border: 1px solid #eeeeef;
+  border-radius: 13px;
+  background: #f7f7f7;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+
+.macos-app .drop-zone:hover,
+.macos-app .drop-zone:focus-visible,
+.macos-app .drop-zone.dragging {
+  border-color: rgba(0, 122, 255, .52);
+  background: #f3f8ff;
+  transform: none;
+}
+
+.macos-app .drop-empty {
+  gap: 7px;
+}
+
+.macos-app .upload-icon {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 1px;
+  color: var(--mac-subtle);
+}
+
+.macos-app .upload-icon .ui-icon {
+  width: 32px;
+  height: 32px;
+  stroke-width: 1.5;
+}
+
+.macos-app .drop-empty strong {
+  color: var(--mac-blue);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.macos-app .drop-empty span {
+  color: var(--mac-muted);
+  font-size: 16px;
+}
+
+.macos-app .helper-copy {
+  max-width: 640px;
+  margin-top: 11px;
+  color: var(--mac-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.macos-app .drop-selected {
+  padding: 12px;
+}
+
+.macos-app .drop-selected img {
+  width: 58px;
+  height: 58px;
+  border-radius: 9px;
+}
+
+.macos-app .file-copy {
+  gap: 4px;
+}
+
+.macos-app .file-copy strong {
+  font-size: 14px;
+}
+
+.macos-app .file-copy span {
+  font-size: 13px;
+}
+
+.macos-app .remove-button {
+  width: 30px;
+  height: 30px;
+}
+
+.macos-app .model-card {
+  min-height: 76px;
+  padding: 14px 16px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.macos-app .model-card.ready {
+  border-color: var(--mac-line-strong);
+  background: #ffffff;
+}
+
+.macos-app .model-icon {
+  width: 31px;
+  height: 31px;
+  color: var(--mac-subtle);
+}
+
+.macos-app .model-icon .ui-icon {
+  width: 29px;
+  height: 29px;
+  stroke-width: 1.35;
+}
+
+.macos-app .model-copy {
+  gap: 4px;
+}
+
+.macos-app .model-copy strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.macos-app .model-copy span {
+  font-size: 13px;
+}
+
+.macos-app .state-pill {
+  position: relative;
+  gap: 6px;
+  padding: 0;
+  color: var(--mac-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .state-pill.ready {
+  min-width: 22px;
+  height: 22px;
+  font-size: 0;
+}
+
+.macos-app .state-pill::before {
+  width: 8px;
+  height: 8px;
+}
+
+.macos-app .state-pill.ready::before {
+  width: 22px;
+  height: 22px;
+  background: var(--mac-green);
+}
+
+.macos-app .state-pill.ready::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(45deg);
+}
+
+.macos-app .platform-guide {
+  margin-top: 16px;
+  padding: 14px 0 0;
+  border-top-color: var(--mac-line);
+}
+
+.macos-app .platform-guide-title {
+  font-size: 14px;
+}
+
+.macos-app .platform-guide-message,
+.macos-app .platform-guide-hardware {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.macos-app .download-panel {
+  margin-top: 16px;
+  padding: 15px;
+  border: 1px solid #d8e4fb;
+  border-radius: 12px;
+  background: #f5f8ff;
+}
+
+.macos-app .download-heading {
+  margin-bottom: 12px;
+}
+
+.macos-app .download-heading strong {
+  font-size: 14px;
+}
+
+.macos-app .download-heading span {
+  font-size: 13px;
+}
+
+.macos-app .download-heading > span {
+  font-size: 13px;
+}
+
+.macos-app .download-actions {
+  margin-top: 13px;
+}
+
+.macos-app .download-actions .secondary-button,
+.macos-app .download-actions .text-button {
+  min-height: 38px;
+  font-size: 14px;
+}
+
+.macos-app .field-row {
+  margin-top: 28px;
+}
+
+.macos-app .field-label {
+  color: var(--mac-ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.macos-app .select-control {
+  min-width: 190px;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 9px;
+  color: var(--mac-ink);
+  background: #f7f7f7;
+  font-size: 14px;
+}
+
+.macos-app .select-control:focus {
+  border-color: var(--mac-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, .14);
+}
+
+.macos-app .advanced-panel {
+  margin-top: 22px;
+  border-top-color: var(--mac-line);
+}
+
+.macos-app .advanced-panel summary {
+  padding: 16px 0 9px;
+  color: var(--mac-ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.macos-app .summary-chevron .ui-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.macos-app .advanced-content {
+  gap: 19px;
+  padding: 12px 0 5px;
+}
+
+.macos-app .range-field,
+.macos-app .resolution-field {
+  gap: 9px;
+  color: var(--mac-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.macos-app .range-field output {
+  color: var(--mac-muted);
+  font-weight: 400;
+}
+
+.macos-app input[type="range"] {
+  height: 5px;
+  accent-color: var(--mac-blue);
+}
+
+.macos-app .segmented {
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 9px;
+  background: #f1f1f3;
+}
+
+.macos-app .segmented button {
+  min-height: 36px;
+  border-radius: 7px;
+  color: var(--mac-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.macos-app .segmented button.active {
+  color: #ffffff;
+  background: var(--mac-blue);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .10);
+}
+
+.macos-app .field-hint {
+  color: var(--mac-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.macos-app .toggle-field {
+  gap: 10px;
+  color: var(--mac-ink);
+  font-size: 14px;
+}
+
+.macos-app .fake-checkbox {
+  width: 19px;
+  height: 19px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 5px;
+  background: #f5f5f7;
+}
+
+.macos-app .toggle-field input:checked + .fake-checkbox {
+  border-color: var(--mac-blue);
+  background: var(--mac-blue);
+  box-shadow: inset 0 0 0 4px #ffffff;
+}
+
+.macos-app .action-area {
+  margin-top: 27px;
+}
+
+.macos-app .primary-button,
+.macos-app .secondary-button,
+.macos-app .cancel-button {
+  min-height: 44px;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.macos-app .primary-button {
+  color: #ffffff;
+  background: var(--mac-blue);
+}
+
+.macos-app .primary-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--mac-blue-hover);
+  transform: none;
+  box-shadow: none;
+}
+
+.macos-app .primary-button:disabled {
+  color: #a1a1a6;
+  background: #d9d9de;
+}
+
+.macos-app .button-icon {
+  display: block;
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.macos-app .primary-button .button-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.4;
+}
+
+.macos-app .cancel-button {
+  color: var(--mac-blue);
+  border-color: var(--mac-line-strong);
+  background: #ffffff;
+}
+
+.macos-app .blocking-message {
+  margin-top: 10px;
+  color: var(--mac-muted);
+  font-size: 13px;
+}
+
+.macos-app .result-toolbar {
+  min-height: 32px;
+  padding: 0 0 16px;
+  border-bottom: 0;
+}
+
+.macos-app .result-toolbar h2 {
+  margin-top: 0;
+  color: var(--mac-ink);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+.macos-app .job-status {
+  gap: 6px;
+  color: var(--mac-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.macos-app .job-status::before {
+  width: 7px;
+  height: 7px;
+}
+
+.macos-app .viewer-shell {
+  min-height: clamp(500px, calc(100vh - 250px), 1160px);
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 14px;
+  background: #dedede;
+}
+
+.macos-app #viewer-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.macos-app .empty-view,
+.macos-app .loading-view,
+.macos-app .error-view {
+  gap: 10px;
+  color: var(--mac-muted);
+}
+
+.macos-app .empty-model-icon {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 6px;
+  stroke: #a1a1a6;
+}
+
+.macos-app .empty-view strong,
+.macos-app .loading-view strong,
+.macos-app .error-view strong {
+  color: #6e6e73;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.macos-app .empty-view span,
+.macos-app .loading-view span,
+.macos-app .error-view span {
+  font-size: 15px;
+}
+
+.macos-app .loading-view {
+  background: rgba(222, 222, 222, .92);
+}
+
+.macos-app .loading-view .generation-progress-track {
+  height: 5px;
+  background: #c9c9cc;
+}
+
+.macos-app .spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid #c9c9cc;
+  border-top-color: var(--mac-blue);
+}
+
+.macos-app .result-actions {
+  gap: 8px;
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--mac-line);
+}
+
+.macos-app .result-actions .secondary-button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 9px;
+  color: var(--mac-ink);
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.macos-app .result-actions .secondary-button:hover:not(.disabled) {
+  border-color: var(--mac-blue);
+  color: var(--mac-blue);
+  background: #ffffff;
+}
+
+.macos-app .result-actions .secondary-button.disabled {
+  color: #a1a1a6;
+  border-color: var(--mac-line);
+  background: #f7f7f7;
+}
+
+.macos-app .artifact-meta {
+  min-width: 0;
+  color: var(--mac-muted);
+  font-size: 13px;
+}
+
+.macos-app .history-header {
+  padding: 16px 0 10px;
+  border-top: 0;
+  color: var(--mac-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.macos-app .history-header span:last-child {
+  color: var(--mac-muted);
+  font-weight: 400;
+}
+
+.macos-app .history-list {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  max-height: 112px;
+}
+
+.macos-app .history-empty {
+  padding: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--mac-line);
+  border-radius: 0;
+  color: var(--mac-muted);
+  font-size: 13px;
+}
+
+.macos-app .history-item {
+  padding: 11px 0;
+  border: 0;
+  border-top: 1px solid var(--mac-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.macos-app .history-item:hover {
+  border-color: var(--mac-line);
+  background: #f8f8fa;
+}
+
+.macos-app .history-item strong {
+  font-size: 13px;
+}
+
+.macos-app .history-item small {
+  color: var(--mac-muted);
+  font-size: 12px;
+}
+
+.macos-app .toast {
+  right: 28px;
+  bottom: 24px;
+  padding: 12px 15px;
+  border: 1px solid var(--mac-line-strong);
+  border-radius: 10px;
+  color: var(--mac-ink);
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .macos-app .control-column {
+    padding-right: 28px;
+    padding-left: 28px;
+  }
+
+  .macos-app .result-column {
+    padding-right: 28px;
+    padding-left: 28px;
+  }
+}
+
+@media (max-width: 900px) {
+  .macos-app .workspace {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .macos-app .control-column,
+  .macos-app .result-column {
+    min-height: auto;
+    padding: 30px 28px 34px;
+  }
+
+  .macos-app .result-column {
+    border-top: 1px solid var(--mac-line);
+    border-left: 0;
+  }
+
+  .macos-app .viewer-shell {
+    min-height: min(70vh, 720px);
+  }
+
+  .macos-app #viewer-canvas {
+    min-height: min(70vh, 720px);
+  }
+}
+
+@media (max-width: 520px) {
+  .macos-app .topbar {
+    min-height: 56px;
+    padding: 0 18px;
+  }
+
+  .macos-app .topbar-actions {
+    gap: 4px;
+  }
+
+  .macos-app .language-button {
+    min-width: 31px;
+    padding: 0 6px;
+  }
+
+  .macos-app .control-column,
+  .macos-app .result-column {
+    padding: 25px 18px 30px;
+  }
+
+  .macos-app .section-heading h2 {
+    font-size: 20px;
+  }
+
+  .macos-app .model-heading {
+    margin-top: 30px;
+  }
+
+  .macos-app .drop-zone {
+    min-height: 148px;
+  }
+
+  .macos-app .drop-empty strong {
+    font-size: 16px;
+  }
+
+  .macos-app .drop-empty span {
+    font-size: 15px;
+  }
+
+  .macos-app .helper-copy {
+    font-size: 14px;
+  }
+
+  .macos-app .model-copy strong {
+    font-size: 14px;
+  }
+
+  .macos-app .model-copy span {
+    font-size: 12px;
+  }
+
+  .macos-app .field-row {
+    align-items: center;
+  }
+
+  .macos-app .field-label {
+    font-size: 15px;
+  }
+
+  .macos-app .select-control {
+    width: 170px;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .macos-app .advanced-panel summary {
+    font-size: 15px;
+  }
+
+  .macos-app .result-toolbar h2 {
+    font-size: 20px;
+  }
+
+  .macos-app .viewer-shell,
+  .macos-app #viewer-canvas {
+    min-height: 430px;
+  }
+
+  .macos-app .result-actions {
+    align-items: stretch;
+  }
+
+  .macos-app .result-actions .secondary-button {
+    flex: 1 1 auto;
+  }
+
+  .macos-app .artifact-meta {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .macos-app .toast {
+    right: 18px;
+    bottom: 18px;
+  }
+}
