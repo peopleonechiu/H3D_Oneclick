@@ -1,5 +1,7 @@
 # 學生端打包結構
 
+最新交接條件、回歸測試與實機待驗項目，以 [Windows 交接文件](../docs/WINDOWS_HANDOFF.md) 為準。
+
 學生端安裝包的目標是自帶所需 runtime 與啟動器。學生只需要安裝應用程式並點擊啟動，不需要自行安裝 Python、Node.js、Git、Docker 或 CUDA Toolkit，也不需要修改系統 `PATH`。
 
 這個資料夾包含可重複執行的 payload builder、完整性 verifier、啟動器與安裝器定義。產生的 `release/` 不進 Git；正式對外版本仍必須通過實機、乾淨電腦、簽章與模型下載驗證。
@@ -49,6 +51,7 @@ Windows payload 必須由已準備好的私有 runtime 建置；建置器不會�
   -PythonRuntime C:\build\python-runtime `
   -BackendVendor C:\build\Hunyuan3D-2.1 `
   -CudaDll C:\build\cuda-dll `
+  -RemBgModel C:\build\u2net.onnx `
   -DinoModel C:\build\dinov2-giant `
   -BackendRevision 82920d643c0dc2f7bfd7255f45f62d386edfe60c `
   -BuildInstaller
@@ -77,7 +80,7 @@ node packaging\verify-payload.mjs windows release\windows
 ## Runtime 責任
 
 - **Mac**：`runtime/mlx-serve` 是原生 MLX／Metal backend。Adapter 以 loopback 啟動它，並把模型目錄放在使用者資料目錄。Launcher 只對子程序設定 `HOME`，不修改學生原本的 MLX cache、shell 設定或系統 `PATH`。
-- **Windows**：`runtime/python/python.exe` 是包內私有 Python。backend wrapper 負責 PyTorch、CUDA 與 native extension；學生不需要編譯。模型下載器會先寫入 `.partial` 目錄，完成後才原子移動到正式模型目錄。
+- **Windows**：`runtime/python/python.exe` 是包內私有 Python。backend wrapper 負責 PyTorch、CUDA 與 native extension；學生不需要編譯。兩平台現在都使用包內 Node 的 manifest 下載器，寫入 `.partial`、校驗 SHA-256 後提交，替換時保留舊模型備份。
 - **兩邊**：瀏覽器開啟相同的 localhost Web UI，並且只與 Local Adapter 溝通。
 
 ## Launcher 行為

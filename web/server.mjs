@@ -2,6 +2,8 @@ import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { allowLocalRequest } from "../adapter/src/local-access.mjs";
 
 const PORT = Number(process.env.PORT || 4173);
 const ADAPTER_URL = (process.env.ADAPTER_URL || "http://127.0.0.1:8787").replace(/\/$/, "");
@@ -48,28 +50,29 @@ function readBody(req) {
 }
 
 async function proxyApi(req, res) {
-  const headers = {};
-  for (const [name, value] of Object.entries(req.headers)) {
-    if (!["connection", "content-length", "host"].includes(name)) headers[name] = value;
-  }
-  const body = ["GET", "HEAD"].includes(req.method) ? undefined : await readBody(req);
-  const response = await fetch(`${ADAPTER_URL}${req.url}`, {
-    method: req.method,
-    headers,
-    body,
-  });
-  const responseHeaders = {};
-  for (const [name, value] of response.headers) {
-    if (!["connection", "content-encoding", "content-length", "transfer-encoding"].includes(name)) {
-      responseHeaders[name] = value;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  res.once("close", abort);
+  try {
+    const headers = {};
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (!["connection", "content-length", "host"].includes(name)) headers[name] = value;
     }
+    const body = ["GET", "HEAD"].includes(req.method) ? undefined : await readBody(req);
+    const response = await fetch(`${ADAPTER_URL}${req.url}`, {
+      method: req.method, headers, body, signal: controller.signal,
+    });
+    const responseHeaders = {};
+    for (const [name, value] of response.headers) {
+      if (!["connection", "content-encoding", "content-length", "transfer-encoding"].includes(name)) responseHeaders[name] = value;
+    }
+    res.writeHead(response.status, responseHeaders);
+    if (!response.body) { res.end(); return; }
+    await pipeline(Readable.fromWeb(response.body), res, { signal: controller.signal });
+  } finally {
+    res.off("close", abort);
+    controller.abort();
   }
-  res.writeHead(response.status, responseHeaders);
-  if (!response.body) {
-    res.end();
-    return;
-  }
-  Readable.fromWeb(response.body).pipe(res);
 }
 
 async function serveStatic(req, res) {
@@ -119,8 +122,9 @@ async function serveStatic(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+  if (!allowLocalRequest(req, res, PORT)) return;
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { "access-control-allow-origin": "*" });
+    res.writeHead(204);
     res.end();
     return;
   }

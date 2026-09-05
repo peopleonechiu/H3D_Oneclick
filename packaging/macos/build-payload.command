@@ -101,9 +101,9 @@ mkdir -p "$STAGED_PAYLOAD/web" "$STAGED_PAYLOAD/adapter/src" "$STAGED_PAYLOAD/pa
 cp "$WEB_BUILD/server.mjs" "$STAGED_PAYLOAD/web/server.mjs"
 cp -R "$WEB_BUILD/dist" "$STAGED_PAYLOAD/web/dist"
 cp "$PROJECT_ROOT/adapter/package.json" "$STAGED_PAYLOAD/adapter/package.json"
-cp "$PROJECT_ROOT/adapter/src/server.mjs" "$STAGED_PAYLOAD/adapter/src/server.mjs"
-cp "$PROJECT_ROOT/adapter/src/backend-process.mjs" "$STAGED_PAYLOAD/adapter/src/backend-process.mjs"
+cp "$PROJECT_ROOT/adapter/src/"*.mjs "$STAGED_PAYLOAD/adapter/src/"
 cp "$PROJECT_ROOT/packaging/macos/launch.command" "$STAGED_PAYLOAD/packaging/macos/launch.command"
+cp -R "$PROJECT_ROOT/packaging/models" "$STAGED_PAYLOAD/packaging/models"
 (
   cd "$STAGED_PAYLOAD/adapter"
   export PATH="$NODE_ROOT/bin:$PATH"

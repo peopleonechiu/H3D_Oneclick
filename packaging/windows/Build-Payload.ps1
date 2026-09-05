@@ -3,6 +3,7 @@ param(
   [Parameter(Mandatory = $true)][string]$PythonRuntime,
   [Parameter(Mandatory = $true)][string]$BackendVendor,
   [Parameter(Mandatory = $true)][string]$CudaDll,
+  [Parameter(Mandatory = $true)][string]$RemBgModel,
   [string]$DinoModel = "",
   [string]$BackendRevision = "",
   [switch]$BuildInstaller
@@ -11,6 +12,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$Payload = [System.IO.Path]::GetFullPath($Payload)
+if ($Payload -eq $ProjectRoot -or $ProjectRoot.StartsWith($Payload.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase)) {
+  throw "Payload cannot be the project root or one of its parents."
+}
 $VersionsPath = Join-Path $ProjectRoot "packaging\versions.json"
 $Versions = Get-Content -Raw -LiteralPath $VersionsPath | ConvertFrom-Json
 $RuntimeSpecPath = Join-Path $ProjectRoot "packaging\windows\runtime-spec.json"
@@ -54,6 +59,7 @@ if (!(Test-Path -LiteralPath (Join-Path $PythonRuntime "python.exe"))) {
 }
 if (!(Test-Path -LiteralPath $BackendVendor)) { throw "BackendVendor was not found: $BackendVendor" }
 if (!(Test-Path -LiteralPath $CudaDll)) { throw "CudaDll directory was not found: $CudaDll" }
+if (!(Test-Path -LiteralPath $RemBgModel -PathType Leaf)) { throw "RemBgModel must be the prepared u2net.onnx file." }
 $ResolvedBackendRevision = $BackendRevision
 if (!$ResolvedBackendRevision) {
   try { $ResolvedBackendRevision = (git -C $BackendVendor rev-parse HEAD).Trim() } catch { }
@@ -112,6 +118,9 @@ try {
   $env:Path = $BuildPath
 }
 Copy-Item (Join-Path $ProjectRoot "packaging\windows\Launch.ps1") $StagePackaging -Force
+Copy-Item $RuntimeSpecPath $StagePackaging -Force
+Copy-Item $VersionsPath (Join-Path $StagedPayload "packaging") -Force
+Copy-Item (Join-Path $ProjectRoot "packaging\models") (Join-Path $StagedPayload "packaging\models") -Recurse -Force
 
 $StagePython = Join-Path $StagedPayload "runtime\python"
 New-Item -ItemType Directory -Force -Path $StagePython | Out-Null
@@ -119,13 +128,15 @@ Copy-Item (Join-Path $PythonRuntime "*") $StagePython -Recurse -Force
 
 $StageBackend = Join-Path $StagedPayload "runtime\backend"
 New-Item -ItemType Directory -Force -Path (Join-Path $StageBackend "vendor") | Out-Null
-Copy-Item (Join-Path $ProjectRoot "runtime\backend\server.py") $StageBackend -Force
-Copy-Item (Join-Path $ProjectRoot "runtime\backend\download_model.py") $StageBackend -Force
+Copy-Item (Join-Path $ProjectRoot "runtime\backend\*.py") $StageBackend -Force
 Copy-Item $BackendVendor (Join-Path $StageBackend "vendor\Hunyuan3D-2.1") -Recurse -Force
 
 $StageCuda = Join-Path $StagedPayload "runtime\cuda-dll"
 New-Item -ItemType Directory -Force -Path $StageCuda | Out-Null
 Copy-Item (Join-Path $CudaDll "*") $StageCuda -Recurse -Force
+$StageRemBg = Join-Path $StagedPayload "runtime\models\rembg"
+New-Item -ItemType Directory -Force -Path $StageRemBg | Out-Null
+Copy-Item -LiteralPath $RemBgModel -Destination (Join-Path $StageRemBg "u2net.onnx") -Force
 
 if ($DinoModel) {
   if (!(Test-Path -LiteralPath $DinoModel)) { throw "DinoModel was not found: $DinoModel" }
@@ -152,13 +163,17 @@ $Verifier = Join-Path $ProjectRoot "packaging\verify-payload.mjs"
 if ($LASTEXITCODE -ne 0) { throw "Windows payload verification failed." }
 
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Payload) | Out-Null
-if (Test-Path -LiteralPath $Payload) { Remove-Item -LiteralPath $Payload -Recurse -Force }
+if (Test-Path -LiteralPath $Payload) {
+  $BackupPayload = "$Payload.backup-$([guid]::NewGuid().ToString('N'))"
+  Move-Item -LiteralPath $Payload -Destination $BackupPayload
+  Write-Host "Previous payload preserved at $BackupPayload"
+}
 Move-Item -LiteralPath $StagedPayload -Destination $Payload
 Write-Host "Windows payload staged at $Payload"
 
 if ($BuildInstaller) {
   $Iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue
   if (!$Iscc) { throw "ISCC.exe was not found. Install Inno Setup on the build machine or omit -BuildInstaller." }
-  & $Iscc.Source (Join-Path $ProjectRoot "packaging\windows\installer.iss")
+  & $Iscc.Source "/DPackageRoot=$Payload" (Join-Path $ProjectRoot "packaging\windows\installer.iss")
   if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE." }
 }

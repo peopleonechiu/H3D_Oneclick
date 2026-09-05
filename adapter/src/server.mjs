@@ -1,14 +1,18 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
-import { createReadStream } from "node:fs";
 import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import Busboy from "busboy";
-import { startManagedBackend, stopManagedBackend } from "./backend-process.mjs";
+import { startManagedBackend, stopManagedBackend, terminateChild } from "./backend-process.mjs";
+import { allowLocalRequest } from "./local-access.mjs";
+import { verifyModel } from "./model-files.mjs";
+import { validateGlb } from "./glb.mjs";
 
 const PORT = Number(process.env.PORT || 8787);
+const HOST = process.env.BIND_HOST || "127.0.0.1";
+const UI_ORIGINS = process.env.ALLOWED_ORIGINS || "http://127.0.0.1:4173,http://localhost:4173";
 const BACKEND_URL = (process.env.BACKEND_URL || "http://127.0.0.1:11234").replace(/\/$/, "");
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(process.cwd(), "data"));
 const OUTPUT_DIR = path.join(DATA_DIR, "outputs");
@@ -37,16 +41,22 @@ const OPEN_OUTPUT_FOLDER_ARGS = parseJsonArray(process.env.OPEN_OUTPUT_FOLDER_AR
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 const jobs = new Map();
+let activeJob = null;
 const downloads = new Map();
 const downloadTimers = new Map();
 const downloadProcesses = new Map();
 let modelInstalled = false;
+let modelVerifying = false;
 
 await mkdir(OUTPUT_DIR, { recursive: true });
 try {
   const saved = JSON.parse(await readFile(MODEL_STATE_FILE, "utf8"));
   const savedReady = saved.modelId === MODEL_ID && saved.state === "ready";
-  modelInstalled = savedReady && (!MODEL_EXPECTED_PATH || await modelPathReady());
+  if (savedReady && MODEL_EXPECTED_PATH) {
+    modelVerifying = true;
+    void validateModelManifest().then(result => { modelInstalled = result.ok; })
+      .finally(() => { modelVerifying = false; });
+  } else modelInstalled = savedReady && process.env.PLATFORM === "docker-mock";
 } catch {
   // A model directory alone is not enough to declare a completed install:
   // interrupted downloads can leave config files behind. The downloader or
@@ -125,39 +135,15 @@ async function modelPathBytes(target) {
   }
 }
 
-async function sha256File(filePath) {
-  const hash = createHash("sha256");
-  const stream = createReadStream(filePath);
-  for await (const chunk of stream) hash.update(chunk);
-  return hash.digest("hex");
-}
-
 async function validateModelManifest() {
-  if (!MODEL_MANIFEST_PATH) return { ok: true };
+  if (!MODEL_MANIFEST_PATH) return { ok: process.env.PLATFORM === "docker-mock", message: "Pinned model manifest is required" };
   if (!MODEL_EXPECTED_PATH) return { ok: false, message: "model manifest has no expected model path" };
   try {
     const manifest = JSON.parse(await readFile(MODEL_MANIFEST_PATH, "utf8"));
     if (manifest.modelId && manifest.modelId !== MODEL_ID) {
       return { ok: false, message: "model manifest id does not match the application" };
     }
-    if (!Array.isArray(manifest.files) || manifest.files.length === 0) {
-      return { ok: false, message: "model manifest has no files" };
-    }
-    for (const file of manifest.files) {
-      if (!file?.path || !file?.sha256) return { ok: false, message: "model manifest contains an invalid file entry" };
-      const target = path.resolve(MODEL_EXPECTED_PATH, file.path);
-      if (!target.startsWith(`${path.resolve(MODEL_EXPECTED_PATH)}${path.sep}`)) {
-        return { ok: false, message: "model manifest contains an unsafe path" };
-      }
-      const info = await stat(target);
-      if (!info.isFile() || (file.size !== undefined && Number(file.size) !== info.size)) {
-        return { ok: false, message: `model file size mismatch: ${file.path}` };
-      }
-      const digest = await sha256File(target);
-      if (digest.toLowerCase() !== String(file.sha256).toLowerCase()) {
-        return { ok: false, message: `model checksum mismatch: ${file.path}` };
-      }
-    }
+    await verifyModel(MODEL_EXPECTED_PATH, manifest);
     return { ok: true };
   } catch (error) {
     return { ok: false, message: `model manifest validation failed: ${error instanceof Error ? error.message : String(error)}` };
@@ -221,7 +207,6 @@ function json(res, status, payload) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(body),
-    "access-control-allow-origin": "*",
     "access-control-allow-headers": "content-type",
     "access-control-allow-methods": "GET,POST,OPTIONS",
   });
@@ -230,7 +215,6 @@ function json(res, status, payload) {
 
 function empty(res, status = 204) {
   res.writeHead(status, {
-    "access-control-allow-origin": "*",
     "access-control-allow-headers": "content-type",
     "access-control-allow-methods": "GET,POST,OPTIONS",
   });
@@ -242,7 +226,8 @@ function errorPayload(code, message, details = {}) {
 }
 
 async function writeJson(file, value) {
-  await writeFile(file, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  await writeFile(`${file}.partial`, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  await rename(`${file}.partial`, file);
 }
 
 async function backendFetch(endpoint, options = {}) {
@@ -251,7 +236,7 @@ async function backendFetch(endpoint, options = {}) {
 
 async function backendHealth() {
   try {
-    const response = await backendFetch("/health");
+    const response = await backendFetch("/health", { signal: AbortSignal.timeout(5000) });
     const body = await response.text();
     let data;
     try { data = JSON.parse(body); } catch { data = { status: response.ok ? "ok" : "down", message: body.slice(0, 300) }; }
@@ -291,7 +276,7 @@ async function getCapabilities() {
   const textureAvailable = backendCapabilities.texture === undefined
     ? process.env.PLATFORM === "docker-mock" && modelReady
     : modelReady && Boolean(backendCapabilities.texture);
-  const modelState = modelReady
+  const modelState = modelVerifying ? "loading" : modelReady
     ? "ready"
     : !modelInstalled
       ? "missing"
@@ -332,6 +317,7 @@ function currentDownload() {
 
 async function markModelReady(state, revision = "external") {
   const validation = await validateModelManifest();
+  if (["cancelled", "cancelling"].includes(state.state)) { state.state = "cancelled"; return false; }
   if (!validation.ok) {
     state.state = "failed";
     state.error = validation.message;
@@ -350,7 +336,6 @@ async function markModelReady(state, revision = "external") {
     expectedPath: MODEL_EXPECTED_PATH || null,
   });
   await backendFetch("/v1/models/rescan", { method: "POST" }).catch(() => {});
-  await ensureBackendModel();
   return true;
 }
 
@@ -406,7 +391,10 @@ function startExternalModelDownload(state) {
     const bytes = await modelPathBytes(MODEL_PROGRESS_PATH);
     if (bytes > state.downloadedBytes) setDownloadProgress(state, bytes);
 
-    if (state.state === "cancelled") return;
+    if (state.state === "cancelled" || state.state === "cancelling") {
+      state.state = "cancelled";
+      return;
+    }
     if (errorMessage || code !== 0) {
       state.state = "failed";
       state.error = errorMessage || `model downloader exited with code ${code}`;
@@ -419,7 +407,8 @@ function startExternalModelDownload(state) {
       state.failedAt = new Date().toISOString();
       return;
     }
-    await markModelReady(state, "downloaded");
+    try { await markModelReady(state, "downloaded"); }
+    catch (error) { state.state = "failed"; state.error = error.message; }
   };
 
   child.once("error", (error) => void finish(null, error instanceof Error ? error.message : String(error)));
@@ -441,7 +430,7 @@ function startMockModelDownload(state) {
 
 function startModelDownload() {
   const active = downloads.get(MODEL_ID);
-  if (active?.state === "downloading") return active;
+  if (active?.state === "downloading" || active?.state === "cancelling" || downloadProcesses.has(MODEL_ID)) return active;
   if (modelInstalled) return currentDownload();
 
   const resumeFrom = active?.state === "cancelled" ? active.downloadedBytes : 0;
@@ -477,9 +466,9 @@ function cancelModelDownload() {
   if (timer) clearInterval(timer);
   downloadTimers.delete(MODEL_ID);
   const child = downloadProcesses.get(MODEL_ID);
-  active.state = "cancelled";
+  active.state = child ? "cancelling" : "cancelled";
   active.cancelledAt = new Date().toISOString();
-  if (child && !child.killed) child.kill();
+  if (child) void terminateChild(child);
   return active;
 }
 
@@ -507,7 +496,7 @@ function parseMultipart(req) {
     try {
       parser = Busboy({
         headers: req.headers,
-        limits: { files: 1, fileSize: MAX_IMAGE_BYTES },
+        limits: { files: 1, fileSize: MAX_IMAGE_BYTES, fields: 16, fieldSize: 4096, parts: 17 },
       });
     } catch (error) {
       reject(error);
@@ -518,11 +507,23 @@ function parseMultipart(req) {
     const imageChunks = [];
     let imageSeen = false;
     let tooLarge = false;
+    const fail = (error) => {
+      reject(error);
+      req.unpipe(parser);
+      parser.destroy();
+      req.resume();
+    };
+    req.once("aborted", () => fail(new Error("upload interrupted")));
+    req.once("error", fail);
+    parser.on("filesLimit", () => fail(new Error("only one photo is allowed")));
+    parser.on("fieldsLimit", () => fail(new Error("too many fields")));
+    parser.on("partsLimit", () => fail(new Error("too many parts")));
 
     parser.on("field", (name, value) => {
       fields[name] = value;
     });
     parser.on("file", (name, file) => {
+      file.on("error", fail);
       if (name !== "photo") {
         file.resume();
         return;
@@ -531,7 +532,7 @@ function parseMultipart(req) {
       file.on("data", (chunk) => imageChunks.push(chunk));
       file.on("limit", () => { tooLarge = true; });
     });
-    parser.on("error", reject);
+    parser.on("error", fail);
     parser.on("finish", () => {
       if (tooLarge) {
         reject(new Error("photo too large"));
@@ -601,15 +602,17 @@ async function requestOfficialHunyuan(job, request) {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
+      job_id: job.id,
       image: request.image,
       remove_background: true,
       texture: request.texture,
       seed: request.seed ?? 42,
       octree_resolution: request.octree_resolution,
-      num_inference_steps: Math.min(20, Math.max(1, request.steps)),
+      num_inference_steps: request.steps,
       guidance_scale: request.guidance_scale,
     }),
-    signal: job.controller.signal,
+    // Keep the response attached until the Windows worker acknowledges the
+    // cancellation. Aborting HTTP alone does not stop CUDA computation.
   });
 
   const body = Buffer.from(await response.arrayBuffer());
@@ -709,9 +712,7 @@ async function streamBackend(job, request) {
 }
 
 async function saveArtifact(job, glb) {
-  if (!Buffer.isBuffer(glb) || glb.length < 4 || glb.subarray(0, 4).toString("ascii") !== "glTF") {
-    throw new Error("backend did not return a valid GLB");
-  }
+  validateGlb(glb);
   const day = new Date().toISOString().slice(0, 10);
   const dir = path.join(OUTPUT_DIR, day);
   await mkdir(dir, { recursive: true });
@@ -825,6 +826,7 @@ async function runJob(job) {
     });
   } finally {
     if (!job.request.keepModelLoaded) await releaseBackendModel();
+    activeJob = null;
     job.controller = null;
     for (const client of job.clients) {
       if (!client.destroyed) client.end();
@@ -870,6 +872,7 @@ async function findArtifact(artifactId) {
 }
 
 async function createJob(req, res) {
+  if (activeJob) { json(res, 409, errorPayload("BACKEND_BUSY", "Another generation is still running or stopping.")); return; }
   if (!modelInstalled) {
     json(res, 409, errorPayload("MODEL_MISSING", "Download the model before generating."));
     return;
@@ -919,6 +922,9 @@ async function createJob(req, res) {
     cancelRequested: false,
     controller: null,
   };
+  // A second request may have arrived while multipart/capabilities awaited.
+  if (activeJob) { json(res, 409, errorPayload("BACKEND_BUSY", "Another generation is still running or stopping.")); return; }
+  activeJob = job;
   jobs.set(job.id, job);
   jobEvent(job, { type: "status", status: "queued", message: "Job queued" });
   void runJob(job);
@@ -938,6 +944,7 @@ function jobSummary(job) {
 }
 
 async function handle(req, res) {
+  if (!allowLocalRequest(req, res, PORT, UI_ORIGINS)) return;
   if (req.method === "OPTIONS") { empty(res); return; }
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
@@ -1015,7 +1022,6 @@ async function handle(req, res) {
       "content-type": "text/event-stream; charset=utf-8",
       "cache-control": "no-cache",
       connection: "keep-alive",
-      "access-control-allow-origin": "*",
     });
     for (const event of job.events) res.write(`data: ${JSON.stringify(event)}\n\n`);
     if (["completed", "failed", "cancelled"].includes(job.status)) {
@@ -1034,7 +1040,16 @@ async function handle(req, res) {
       return;
     }
     job.cancelRequested = true;
-    job.controller?.abort();
+    if (BACKEND_PROTOCOL === "official-hunyuan" && job.controller) {
+      const response = await backendFetch("/v1/cancel", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ job_id: job.id }), signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) { json(res, 502, errorPayload("CANCEL_FAILED", "Backend could not acknowledge cancellation.")); return; }
+    } else if (BACKEND_PROTOCOL !== "official-hunyuan") {
+      // MLX currently has no confirmed stop acknowledgement. Keep the stream
+      // attached and the worker reserved, then discard its result safely.
+    }
     json(res, 202, { jobId: job.id, status: "cancelling" });
     return;
   }
@@ -1056,7 +1071,6 @@ async function handle(req, res) {
       "content-type": "model/gltf-binary",
       "content-length": content.length,
       "content-disposition": `inline; filename="${job.artifact.filename}"`,
-      "access-control-allow-origin": "*",
     });
     res.end(content);
     return;
@@ -1069,7 +1083,6 @@ async function handle(req, res) {
       "content-type": "model/gltf-binary",
       "content-length": content.length,
       "content-disposition": `inline; filename="${artifact.filename}"`,
-      "access-control-allow-origin": "*",
     });
     res.end(content);
     return;
@@ -1096,17 +1109,24 @@ const server = http.createServer((req, res) => {
 });
 
 startManagedBackend();
-process.once("SIGINT", () => {
-  stopManagedBackend();
-  server.close(() => process.exit(0));
-});
-process.once("SIGTERM", () => {
-  stopManagedBackend();
-  server.close(() => process.exit(0));
-});
+let shuttingDown = false;
+async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  server.close();
+  server.closeAllConnections();
+  for (const timer of downloadTimers.values()) clearInterval(timer);
+  for (const state of downloads.values()) state.state = "cancelled";
+  for (const job of jobs.values()) { job.cancelRequested = true; job.controller?.abort(); }
+  await Promise.all([...downloadProcesses.values()].map(terminateChild));
+  await stopManagedBackend();
+  process.exit(0);
+}
+process.once("SIGINT", () => void shutdown());
+process.once("SIGTERM", () => void shutdown());
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[adapter] listening on http://0.0.0.0:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`[adapter] listening on http://${HOST}:${PORT}`);
   console.log(`[adapter] backend ${BACKEND_URL}`);
   console.log(`[adapter] data ${DATA_DIR}`);
 });

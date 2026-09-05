@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import base64
 import io
+import importlib
 import json
 import os
 import shutil
@@ -23,11 +24,19 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Callable
+from functools import wraps
+from local_paint import bind_local_paint
 
 
 MODEL_ID = "hunyuan3d-2-1-8bit"
 SHAPE_MIN_VRAM_BYTES = 10 * 1024**3
-TEXTURE_MIN_VRAM_BYTES = 21 * 1024**3
+# Current wrapper retains both shape and paint pipelines in memory.
+TEXTURE_MIN_VRAM_BYTES = 29 * 1024**3
+_DLL_HANDLES = []
+if sys.platform == "win32":
+    dll_dir = Path(__file__).resolve().parent.parent / "cuda-dll"
+    if dll_dir.is_dir():
+        _DLL_HANDLES.append(os.add_dll_directory(str(dll_dir)))
 
 
 class BackendError(RuntimeError):
@@ -70,6 +79,14 @@ def decode_image(encoded: str):
         raise BackendError("INVALID_IMAGE", f"Unable to decode image: {exc}", 400) from exc
 
 
+def serialized(method):
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        with self._generation_lock:
+            return method(self, *args, **kwargs)
+    return locked
+
+
 class HunyuanBackend:
     def __init__(self, model_dir: Path, source_root: Path | None, low_vram_mode: bool = False):
         self.model_dir = model_dir.resolve()
@@ -80,7 +97,9 @@ class HunyuanBackend:
         self._torch = None
         self._paint_error: str | None = None
         self._load_lock = threading.Lock()
-        self._generation_lock = threading.Lock()
+        self._generation_lock = threading.RLock()
+        self._cancelled_jobs = set()
+        self._active_job = None
         self._temporary_root = Path(tempfile.mkdtemp(prefix="jic-hunyuan-backend-"))
 
     @property
@@ -131,6 +150,8 @@ class HunyuanBackend:
         }
 
     def texture_capability(self) -> bool:
+        if self._paint_error:
+            return False
         hardware = self.hardware()
         if not hardware.get("textureSupported", False):
             return False
@@ -138,12 +159,26 @@ class HunyuanBackend:
             return False
         dino_raw = os.environ.get("JIC_DINO_MODEL_PATH", "").strip()
         dino_path = Path(dino_raw) if dino_raw else None
-        return (
+        assets_present = (
             (self.source_root / "hy3dpaint").is_dir()
             and (self.source_root / "hy3dpaint" / "textureGenPipeline.py").is_file()
             and dino_path is not None
             and dino_path.is_dir()
+            and (dino_path / "config.json").is_file()
+            and any(p.stat().st_size > 0 for p in list(dino_path.glob("*.safetensors")) + list(dino_path.glob("*.bin")))
+            and (self.model_dir / "hunyuan3d-paintpbr-v2-1" / "model_index.json").is_file()
+            and (self.source_root / "hy3dpaint/ckpt/RealESRGAN_x4plus.pth").is_file()
         )
+        if not assets_present:
+            return False
+        self._prepare_source_imports()
+        try:
+            for module in ("custom_rasterizer", "DifferentiableRenderer.MeshRender", "textureGenPipeline"):
+                importlib.import_module(module)
+            return True
+        except Exception as exc:
+            self._paint_error = str(exc)
+            return False
 
     def _prepare_source_imports(self):
         if not self.source_root:
@@ -153,6 +188,7 @@ class HunyuanBackend:
             if path.is_dir() and str(path) not in sys.path:
                 sys.path.insert(0, str(path))
 
+    @serialized
     def load(self):
         if self.loaded:
             return
@@ -192,7 +228,7 @@ class HunyuanBackend:
         if not self.texture_capability():
             raise BackendError(
                 "TEXTURE_UNAVAILABLE",
-                "PBR texture requires the paint runtime and at least 21 GB VRAM.",
+                "PBR texture requires verified paint assets/native runtime and at least 29 GB VRAM with both pipelines resident.",
                 412,
             )
         self._prepare_source_imports()
@@ -209,6 +245,7 @@ class HunyuanBackend:
                 config.multiview_cfg_path = str(self.source_root / "hy3dpaint" / "cfgs" / "hunyuan-paint-pbr.yaml")
                 config.custom_pipeline = str(self.source_root / "hy3dpaint" / "hunyuanpaintpbr")
             config.multiview_pretrained_path = str(self.model_dir)
+            bind_local_paint(importlib.import_module("utils.multiview_utils"), self.model_dir)
             dino_path = os.environ.get("JIC_DINO_MODEL_PATH", "").strip()
             if dino_path:
                 config.dino_ckpt_path = dino_path
@@ -218,6 +255,7 @@ class HunyuanBackend:
             self.paint_pipeline = None
             raise BackendError("TEXTURE_UNAVAILABLE", f"Unable to load PBR paint model: {exc}", 412) from exc
 
+    @serialized
     def unload(self):
         self.paint_pipeline = None
         self.shape_pipeline = None
@@ -227,29 +265,49 @@ class HunyuanBackend:
 
     def _run_shape(self, image, payload: dict[str, Any]):
         torch = self._import_torch()
-        seed = int(payload.get("seed") or 42)
+        seed = int(payload.get("seed", 42))
         generator = torch.Generator(device="cuda").manual_seed(seed)
-        steps = max(1, min(20, int(payload.get("num_inference_steps") or payload.get("steps") or 30)))
-        guidance = float(payload.get("guidance_scale") or 5.0)
-        resolution = max(64, min(512, int(payload.get("octree_resolution") or 256)))
+        steps = int(payload.get("num_inference_steps", payload.get("steps", 30)))
+        guidance = float(payload.get("guidance_scale", 5.0))
+        resolution = int(payload.get("octree_resolution", 256))
+        if not 1 <= steps <= 100 or not 0 <= guidance <= 20 or not 64 <= resolution <= 512:
+            raise BackendError("INVALID_REQUEST", "Generation parameters are outside supported ranges.", 400)
         kwargs = {
             "image": image,
             "num_inference_steps": steps,
             "guidance_scale": guidance,
             "octree_resolution": resolution,
             "generator": generator,
+            "callback": lambda *args: self._check_cancelled(),
+            "callback_steps": 1,
         }
-        try:
-            return self.shape_pipeline(**kwargs)[0]
-        except TypeError:
-            # Keep compatibility with an older pinned Tencent pipeline whose
-            # callable only accepts the image and uses its own defaults.
-            kwargs.pop("generator", None)
-            return self.shape_pipeline(image=image, num_inference_steps=steps, guidance_scale=guidance)[0]
+        return self.shape_pipeline(**kwargs)[0]
 
+    def cancel(self, job_id):
+        if not isinstance(job_id, str) or not job_id:
+            raise BackendError("INVALID_REQUEST", "Missing job ID.", 400)
+        if len(self._cancelled_jobs) >= 64:
+            raise BackendError("BUSY", "Too many pending cancellations.", 409)
+        self._cancelled_jobs.add(job_id)
+
+    def _check_cancelled(self):
+        if self._active_job in self._cancelled_jobs:
+            raise BackendError("GENERATION_CANCELLED", "Generation cancelled.", 409)
+
+    @serialized
     def generate(self, payload: dict[str, Any], progress: Callable[[str, str], None] | None = None) -> bytes:
+        self._active_job = payload.get("job_id") or uuid.uuid4().hex
+        try:
+            self._check_cancelled()
+            return self._generate(payload, progress)
+        finally:
+            self._cancelled_jobs.discard(self._active_job)
+            self._active_job = None
+
+    def _generate(self, payload: dict[str, Any], progress=None) -> bytes:
         if not self.loaded:
             self.load()
+        self._check_cancelled()
         if not isinstance(payload.get("image"), str) or not payload["image"]:
             raise BackendError("INVALID_IMAGE", "Missing image.", 400)
 
@@ -270,6 +328,7 @@ class HunyuanBackend:
                 progress("shape", "Generating shape")
             try:
                 mesh = self._run_shape(image, payload)
+                self._check_cancelled()
             except BackendError:
                 raise
             except Exception as exc:  # pragma: no cover - depends on private runtime
@@ -291,6 +350,7 @@ class HunyuanBackend:
                         output_mesh_path=str(output_obj),
                         save_glb=False,
                     )
+                    self._check_cancelled()
                     from hy3dpaint.convert_utils import create_glb_with_pbr_materials
 
                     textured_glb = self._temporary_root / f"{job_id}_textured.glb"
@@ -352,12 +412,20 @@ class RequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args):
         print(f"[hunyuan-http] {self.address_string()} - {format % args}", flush=True)
 
+    def _allowed_request(self):
+        port = self.server.server_port
+        if self.headers.get("Origin") is not None or self.headers.get("Host") not in (
+            f"127.0.0.1:{port}", f"localhost:{port}", f"[::1]:{port}"
+        ):
+            self._send_json(403, {"error": {"code": "FORBIDDEN", "message": "Internal backend only."}})
+            return False
+        return True
+
     def _send_json(self, status: int, payload: dict[str, Any]):
         body = json_bytes(payload)
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "content-type")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
         self.end_headers()
@@ -382,7 +450,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "model/gltf-binary")
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Content-Disposition", 'inline; filename="hunyuan3d.glb"')
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(data)
 
@@ -391,13 +458,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.flush()
 
     def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "content-type")
-        self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-        self.end_headers()
+        self._send_json(403, {"error": {"code": "FORBIDDEN", "message": "Internal backend only."}})
 
     def do_GET(self):
+        if not self._allowed_request():
+            return
         if self.path == "/health":
             self._send_json(200, self.backend.health())
             return
@@ -407,8 +472,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": {"code": "NOT_FOUND", "message": "Route not found."}})
 
     def do_POST(self):
+        if not self._allowed_request():
+            return
         stream_started = False
         try:
+            if self.path == "/v1/cancel":
+                self.backend.cancel(self._read_json().get("job_id"))
+                self._send_json(202, {"status": "cancelling"})
+                return
             if self.path == "/v1/load-model":
                 self._read_json()
                 self.backend.load()
@@ -438,7 +509,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "text/event-stream; charset=utf-8")
                 self.send_header("Cache-Control", "no-cache")
                 self.send_header("Connection", "keep-alive")
-                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
 
                 def progress(stage: str, message: str):

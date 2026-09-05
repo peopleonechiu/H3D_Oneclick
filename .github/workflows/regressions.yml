@@ -1,0 +1,23 @@
+name: H3D regression checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t h3d-test adapter
+      - name: Public HTTP, process and data regressions (no GPU)
+        run: |
+          docker run --rm --network none -v "$PWD:/source:ro" -v "$PWD/adapter/src:/app/src:ro" h3d-test node /source/tests/release-regressions.mjs
+          for suite in model-regressions payload-regressions ui-state-regressions process-seam; do
+            docker run --rm --network none -v "$PWD:/source:ro" h3d-test node "/source/tests/$suite.mjs"
+          done
+      - name: Python control-flow tests (no CUDA)
+        run: docker run --rm --network none -e PYTHONDONTWRITEBYTECODE=1 -v "$PWD:/source:ro" python:3.10-slim python /source/tests/backend-regressions.py
+      - name: Production Web build
+        run: |
+          docker build -t h3d-web-test web
+          docker run --rm --network none h3d-web-test npm run build
+      - run: sh -n packaging/macos/launch.command && sh -n packaging/macos/build-payload.command

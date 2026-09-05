@@ -1,0 +1,63 @@
+{
+  "platform": "macos",
+  "modelId": "hunyuan3d-2-1-8bit",
+  "repository": "ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit",
+  "revision": "11ca09dc21a930e9861c0cd19bed0f0507fac232",
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 17915,
+      "sha256": "5bd08f93b2d280bb26ff3eed5d3996fe47a9698b5f7785163928668d7fd578c6"
+    },
+    {
+      "path": "conditioner.safetensors",
+      "size": 325688080,
+      "sha256": "2d401c3f8614fd5738f8feb8bff78381296191c8f36c73ac3a2b5700f7318a91"
+    },
+    {
+      "path": "config.json",
+      "size": 471,
+      "sha256": "d06f1fc2dc81f4eae0f72f44321cd45d66d1ece271452e3a8aae2c0e9f9f752d"
+    },
+    {
+      "path": "dit.safetensors",
+      "size": 3242941850,
+      "sha256": "67780cf10488c71f6f3ec4b90946d2f87fcc3155eb5d0d26debb9f272e2aa9ea"
+    },
+    {
+      "path": "paint/LICENSE",
+      "size": 17915,
+      "sha256": "5bd08f93b2d280bb26ff3eed5d3996fe47a9698b5f7785163928668d7fd578c6"
+    },
+    {
+      "path": "paint/config.json",
+      "size": 2302,
+      "sha256": "e5626dc63b7db422c15672b18ef90cca92749287d37528e18f13408853c960ff"
+    },
+    {
+      "path": "paint/dino.safetensors",
+      "size": 1211390571,
+      "sha256": "5f0433c25beef1d3bb05b775c45ada6a8608a2bc20a3843069526eee41242f97"
+    },
+    {
+      "path": "paint/unet.safetensors",
+      "size": 1720524204,
+      "sha256": "e1cab9acb9d9243736dd63600d65f9f9368158c3fb688515835b3415f6830ed5"
+    },
+    {
+      "path": "paint/unet_dual.safetensors",
+      "size": 1464526440,
+      "sha256": "78741c60d12e035c39af91af6321441c2878724a39633e313fe236811e7f6f6a"
+    },
+    {
+      "path": "paint/vae.safetensors",
+      "size": 167335331,
+      "sha256": "3a85a3c1a8f615782fe26e5362e649c2ec4e4e37dfe61e5415c7526e0e112211"
+    },
+    {
+      "path": "vae.safetensors",
+      "size": 227932915,
+      "sha256": "53ae311365f50724eab65b5b529c151fc0583d86639866d5619dc85b3b207574"
+    }
+  ]
+}

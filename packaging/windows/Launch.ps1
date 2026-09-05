@@ -7,7 +7,8 @@ $WebEntry = Join-Path $AppRoot "web\server.mjs"
 $DistDir = Join-Path $AppRoot "web\dist"
 $Backend = Join-Path $AppRoot "runtime\python\python.exe"
 $BackendScript = Join-Path $AppRoot "runtime\backend\server.py"
-$ModelDownloadScript = Join-Path $AppRoot "runtime\backend\download_model.py"
+$ModelDownloadScript = Join-Path $AppRoot "adapter\src\model-files.mjs"
+$ModelManifest = Join-Path $AppRoot "packaging\models\windows.json"
 $BackendSourceRoot = Join-Path $AppRoot "runtime\backend\vendor\Hunyuan3D-2.1"
 $DinoModelRoot = Join-Path $AppRoot "runtime\models\dinov2-giant"
 $DataRoot = Join-Path $env:LOCALAPPDATA "JIC_YZUIC\Hunyuan3D-Windows"
@@ -31,13 +32,15 @@ if (!(Test-Path -LiteralPath $AdapterEntry) -or !(Test-Path -LiteralPath $WebEnt
 try {
   $existing = Invoke-WebRequest -UseBasicParsing -TimeoutSec 1 -Uri "http://127.0.0.1:$WebPort/api/health"
   $existingPayload = $existing.Content | ConvertFrom-Json
-  if ($existing.StatusCode -eq 200 -and $existingPayload.adapter -eq "jic-local-adapter") {
+  if ($existing.StatusCode -eq 200 -and $existingPayload.adapter -eq "jic-local-adapter" -and $existingPayload.platform -eq "windows-x64-cuda") {
     Start-Process "http://127.0.0.1:$WebPort"
     exit 0
   }
 } catch {
   # No existing JIC instance; continue with startup.
 }
+& $Node (Join-Path $AppRoot "adapter\src\launcher-check.mjs") ports $WebPort $AdapterPort $BackendPort
+if ($LASTEXITCODE -ne 0) { throw "Application ports are unavailable. No service was started." }
 
 New-Item -ItemType Directory -Force -Path $ModelRoot, $DataRoot, $LogDir | Out-Null
 $BackendArgs = @(
@@ -49,9 +52,8 @@ $BackendArgs = @(
 )
 $ModelDownloadArgs = @(
   $ModelDownloadScript,
-  "--repo-id", "tencent/Hunyuan3D-2.1",
-  "--revision", "0b94677654c57bb9a6b6845cd7b704ccf551d327",
-  "--local-dir", $ModelRoot
+  $ModelManifest,
+  $ModelRoot
 )
 
 # Keep Python and CUDA DLL resolution private to this launcher process. No
@@ -60,6 +62,10 @@ $PrivatePythonBin = Join-Path $AppRoot "runtime\python"
 $PrivateCudaBin = Join-Path $AppRoot "runtime\cuda-dll"
 $env:PATH = "$PrivatePythonBin;$PrivateCudaBin;$env:PATH"
 $env:PYTHONNOUSERSITE = "1"
+Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
+Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+$env:HF_HUB_OFFLINE = "1"
+$env:TRANSFORMERS_OFFLINE = "1"
 
 $env:PORT = "$AdapterPort"
 $env:DATA_DIR = $DataRoot
@@ -71,10 +77,14 @@ $env:MODEL_DISPLAY_NAME = "Hunyuan3D 2.1 (CUDA)"
 $env:BACKEND_MODEL_TARGET = $ModelRoot
 $env:BACKEND_REQUEST_MODEL = "hunyuan3d-2-1-8bit"
 $env:JIC_DINO_MODEL_PATH = $DinoModelRoot
+$env:U2NET_HOME = Join-Path $AppRoot "runtime\models\rembg"
 $env:BACKEND_COMMAND = $Backend
 $env:BACKEND_ARGS_JSON = $BackendArgs | ConvertTo-Json -Compress
 $env:BACKEND_WORKDIR = $AppRoot
-$env:MODEL_DOWNLOAD_COMMAND = $Backend
+$env:MODEL_DOWNLOAD_COMMAND = $Node
+$env:MODEL_MANIFEST_PATH = $ModelManifest
+$env:BIND_HOST = "127.0.0.1"
+$env:ALLOWED_ORIGINS = "http://127.0.0.1:$WebPort,http://localhost:$WebPort"
 $env:MODEL_DOWNLOAD_ARGS_JSON = $ModelDownloadArgs | ConvertTo-Json -Compress
 $env:MODEL_DOWNLOAD_WORKDIR = $AppRoot
 $env:MODEL_EXPECTED_PATH = $ModelRoot
@@ -85,20 +95,24 @@ $AdapterLog = Join-Path $LogDir "adapter.log"
 $AdapterErrorLog = Join-Path $LogDir "adapter-error.log"
 $WebLog = Join-Path $LogDir "web.log"
 $WebErrorLog = Join-Path $LogDir "web-error.log"
-$adapterProcess = Start-Process -FilePath $Node -WorkingDirectory $AppRoot -ArgumentList @("`"$AdapterEntry`"") -RedirectStandardOutput $AdapterLog -RedirectStandardError $AdapterErrorLog -PassThru
-
-$env:PORT = "$WebPort"
-$env:DIST_DIR = $DistDir
-$env:ADAPTER_URL = "http://127.0.0.1:$AdapterPort"
-$webProcess = Start-Process -FilePath $Node -WorkingDirectory $AppRoot -ArgumentList @("`"$WebEntry`"") -RedirectStandardOutput $WebLog -RedirectStandardError $WebErrorLog -PassThru
-
+$adapterProcess = $null
+$webProcess = $null
 try {
+  $adapterProcess = Start-Process -FilePath $Node -WorkingDirectory $AppRoot -ArgumentList @("`"$AdapterEntry`"") -RedirectStandardOutput $AdapterLog -RedirectStandardError $AdapterErrorLog -PassThru
+
+  $env:PORT = "$WebPort"
+  $env:DIST_DIR = $DistDir
+  $env:ADAPTER_URL = "http://127.0.0.1:$AdapterPort"
+  $webProcess = Start-Process -FilePath $Node -WorkingDirectory $AppRoot -ArgumentList @("`"$WebEntry`"") -RedirectStandardOutput $WebLog -RedirectStandardError $WebErrorLog -PassThru
+
+  & $Node (Join-Path $AppRoot "adapter\src\launcher-check.mjs") ready "http://127.0.0.1:$WebPort" "windows-x64-cuda"
+  if ($LASTEXITCODE -ne 0 -or $adapterProcess.HasExited -or $webProcess.HasExited) { throw "Local service startup failed. Logs: $LogDir" }
   Start-Process "http://127.0.0.1:$WebPort"
   Write-Host "JIC_YZUIC_Hunyuan3D-Windows is running."
   Write-Host "Logs: $LogDir"
   Wait-Process -Id $webProcess.Id
 }
 finally {
-  if (!$webProcess.HasExited) { Stop-Process -Id $webProcess.Id -Force }
-  if (!$adapterProcess.HasExited) { & taskkill.exe /PID $adapterProcess.Id /T /F | Out-Null }
+  if ($webProcess -and !$webProcess.HasExited) { Stop-Process -Id $webProcess.Id -Force }
+  if ($adapterProcess -and !$adapterProcess.HasExited) { & taskkill.exe /PID $adapterProcess.Id /T /F | Out-Null }
 }

@@ -6,9 +6,11 @@
 
 ## 目前狀態
 
+2026-09-05：已修正發布前 review 的主要程式問題，新增回歸測試與固定模型 manifest。可交接 Windows runtime 準備、打包與實機驗收，**不是已驗收的學生安裝包**。接手者請先閱讀 [Windows 打包與實機驗收交接](docs/WINDOWS_HANDOFF.md)，包含新增必需的 `-RemBgModel`、測試證據與尚未完成的項目。
+
 | 項目 | 狀態 |
 |---|---|
-| Web UI | 已完成照片上傳、模型狀態、模型下載、品質設定、進階設定、生成進度、取消、GLB 預覽、歷史輸出與輸出資料夾操作 |
+| Web UI | 已實作上傳、下載、生成、預覽、歷史與中英文；本輪補下載狀態復原、硬體錯誤呈現及取消等待，完整實機流程仍待驗收 |
 | 語言 | 已提供繁體中文／English 切換，選擇會保存在本機瀏覽器 |
 | Mac Apple Silicon | 已接上原生 `mlx-serve` 的 adapter seam，開發機已完成 shape → GLB smoke test |
 | Windows x64 NVIDIA | 已建立私有 Python／CUDA wrapper 與下載流程，仍需 NVIDIA Windows 實機驗證 |

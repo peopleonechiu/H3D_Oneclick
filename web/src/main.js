@@ -42,7 +42,7 @@ const translations = {
     "guide.windows.model": "CUDA 模型",
     "guide.windows.title": "NVIDIA GPU",
     "guide.windows.download": "下載模型",
-    "guide.windows.size": "約 8 GB",
+    "guide.windows.size": "約 15 GB",
     "guide.windows.ready": "硬體符合",
     "guide.windows.checking": "檢查中",
     "guide.windows.unsupported": "硬體不支援",
@@ -156,7 +156,7 @@ const translations = {
     "guide.windows.title": "NVIDIA GPU",
     "guide.windows.model": "CUDA model",
     "guide.windows.download": "Download model",
-    "guide.windows.size": "About 8 GB",
+    "guide.windows.size": "About 15 GB",
     "guide.windows.ready": "Hardware supported",
     "guide.windows.checking": "Checking",
     "guide.windows.unsupported": "Hardware not supported",
@@ -629,7 +629,7 @@ function renderPlatformGuide(model, capabilities) {
   } else if (kind === "windows") {
     let guideMessage = t("guide.windows.checking");
     let hardwareText = t("guide.windows.hardwareUnknown");
-    if (hardware && capabilities?.backendHealth === "ready") {
+    if (hardware && typeof hardware.supported === "boolean") {
       guideMessage = hardware.supported === false ? t("guide.windows.unsupported") : t("guide.windows.ready");
       hardwareText = hardware.supported === false
         ? hardwareReasonText(hardware)
@@ -668,8 +668,8 @@ function updateGenerateState() {
   generateButton.disabled = !enabled;
   const message = el("blocking-message");
   const hardwareBlocked = platformKind() === "windows" && state.capabilities?.hardware?.supported === false;
-  if (!state.file) message.textContent = t("action.choosePhoto");
-  else if (hardwareBlocked) message.textContent = hardwareReasonText(state.capabilities.hardware);
+  if (hardwareBlocked) message.textContent = hardwareReasonText(state.capabilities.hardware);
+  else if (!state.file) message.textContent = t("action.choosePhoto");
   else if (modelState === "unavailable" || modelState === "loading") message.textContent = t("action.backendUnavailable");
   else if (!modelReady) message.textContent = t("action.downloadModel");
   else message.textContent = t("action.ready");
@@ -701,7 +701,7 @@ function renderModel(model, capabilities) {
       : failed
         ? t("model.downloadFailed")
         : loading || unavailable
-          ? t("model.checking")
+          ? t(unavailable ? "model.localUnavailable" : "model.checking")
           : t("status.missing");
   el("model-state").textContent = stateLabel;
   el("model-state").className = `state-pill ${ready ? "ready" : downloading ? "downloading" : loading || unavailable ? "loading" : "missing"}`;
@@ -719,6 +719,8 @@ function renderModel(model, capabilities) {
 }
 
 async function refreshStatus() {
+  if (state.refreshing) return;
+  state.refreshing = true;
   try {
     const [capabilitiesResponse, modelsResponse] = await Promise.all([
       fetch("/api/capabilities"),
@@ -732,6 +734,7 @@ async function refreshStatus() {
     el("runtime-badge").textContent = `${state.language === "en" ? "LOCAL" : "本機"} · ${backendName}`;
     el("runtime-badge").className = `runtime-badge ${state.capabilities.backendHealth === "ready" ? "online" : "offline"}`;
     renderModel(model, state.capabilities);
+    if (["downloading", "cancelling"].includes(model?.download?.state)) void observeDownload();
   } catch (error) {
     state.capabilities = null;
     el("runtime-badge").textContent = t("runtime.offline");
@@ -742,7 +745,9 @@ async function refreshStatus() {
     renderPlatformGuide(null, null);
     setHidden("download-panel", true);
     updateGenerateState();
-    showToast(error.message, "error");
+    // Connection recovery is polled; do not repeat a toast every few seconds.
+  } finally {
+    state.refreshing = false;
   }
 }
 
@@ -752,30 +757,37 @@ async function getDownloadState() {
   return response.json();
 }
 
-async function downloadModel() {
+async function downloadModel() { return observeDownload(true); }
+
+async function observeDownload(start = false) {
+  if (state.watchingDownload) return;
   const button = el("download-button");
   const cancelButton = el("cancel-download-button");
-  if (!canDownloadModel()) {
+  if (start && !canDownloadModel()) {
     const message = platformKind() === "windows"
       ? hardwareReasonText(state.capabilities?.hardware)
       : t("error.hardware");
     showToast(message, "error");
     return;
   }
+  state.watchingDownload = true;
   state.downloadCancelled = false;
   button.disabled = true;
   cancelButton.disabled = false;
   setHidden("cancel-download-button", false);
   button.textContent = t("model.preparing");
   try {
-    const startResponse = await fetch(`/api/models/${MODEL_ID}/download`, { method: "POST" });
-    if (!startResponse.ok) {
-      const payload = await startResponse.json().catch(() => null);
-      throw new Error(payload?.error?.message || t("error.downloadStart"));
+    if (start) {
+      const startResponse = await fetch(`/api/models/${MODEL_ID}/download`, { method: "POST" });
+      if (!startResponse.ok) {
+        const payload = await startResponse.json().catch(() => null);
+        throw new Error(payload?.error?.message || t("error.downloadStart"));
+      }
     }
     setHidden("download-panel", false);
     while (true) {
       const current = await getDownloadState();
+      cancelButton.disabled = current.state === "cancelling";
       const percent = Number.isFinite(current.progress) ? Math.round(current.progress * 100) : null;
       el("download-percent").textContent = percent === null ? "—" : `${percent}%`;
       el("download-progress").classList.toggle("indeterminate", Boolean(current.indeterminate || percent === null));
@@ -792,6 +804,7 @@ async function downloadModel() {
     button.textContent = t("model.retry");
     showToast(state.downloadCancelled ? t("error.downloadCancelled") : error.message, state.downloadCancelled ? "" : "error");
   } finally {
+    state.watchingDownload = false;
     button.disabled = state.capabilities?.modelState === "ready" || !canDownloadModel();
     cancelButton.disabled = false;
     setHidden("cancel-download-button", true);
@@ -828,6 +841,7 @@ function selectedResolution() {
 }
 
 function setBusy(busy) {
+  cancelButton.disabled = false;
   state.busy = busy;
   setHidden("generate-button", busy);
   setHidden("cancel-button", !busy);
@@ -941,11 +955,15 @@ async function generate() {
 
 async function cancelGeneration() {
   if (!state.currentJob) return;
-  await fetch(`/api/jobs/${encodeURIComponent(state.currentJob)}/cancel`, { method: "POST" });
-  state.eventSource?.close();
-  state.currentJob = null;
-  setBusy(false);
-  showReady();
+  cancelButton.disabled = true;
+  try {
+    const response = await fetch(`/api/jobs/${encodeURIComponent(state.currentJob)}/cancel`, { method: "POST" });
+    if (!response.ok) throw new Error((await response.json()).error?.message || t("error.generation"));
+    // Keep SSE and busy state until the worker actually stops.
+  } catch (error) {
+    cancelButton.disabled = false;
+    showToast(error.message, "error");
+  }
 }
 
 async function loadHistory() {
@@ -1115,4 +1133,5 @@ setupInteractions();
 updateAdvancedValues();
 viewer.init();
 refreshStatus();
+setInterval(() => void refreshStatus(), 3000);
 loadHistory();

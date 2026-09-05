@@ -67,8 +67,21 @@ export function startManagedBackend() {
   return child;
 }
 
-export function stopManagedBackend() {
-  if (!child || child.killed) return;
-  child.kill();
-  child = null;
+export async function terminateChild(target) {
+  if (!target || target.exitCode !== null || target.signalCode !== null) return;
+  const exited = new Promise(resolve => target.once("exit", resolve));
+  target.kill();
+  let timer;
+  await Promise.race([exited, new Promise(resolve => { timer = setTimeout(resolve, 3000); })]);
+  clearTimeout(timer);
+  if (target.exitCode === null && target.signalCode === null) {
+    target.kill("SIGKILL");
+    await exited;
+  }
+}
+
+export async function stopManagedBackend() {
+  const target = child;
+  await terminateChild(target);
+  if (child === target) child = null;
 }

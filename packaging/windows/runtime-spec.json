@@ -15,7 +15,7 @@
   },
   "hardware": {
     "shapeMinimumVramGb": 10,
-    "textureMinimumVramGb": 21,
+    "textureMinimumVramGb": 29,
     "shapeAndTextureMinimumVramGb": 29
   }
 }

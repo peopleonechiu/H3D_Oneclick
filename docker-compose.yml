@@ -13,6 +13,8 @@ services:
       context: ./adapter
     environment:
       PORT: "8787"
+      BIND_HOST: "0.0.0.0"
+      ALLOWED_HOSTS: "adapter:8787"
       BACKEND_URL: http://mock-backend:11234
       DATA_DIR: /data
       PLATFORM: docker-mock
@@ -20,7 +22,7 @@ services:
     depends_on:
       - mock-backend
     ports:
-      - "8787:8787"
+      - "127.0.0.1:8787:8787"
     volumes:
       - adapter-data:/data
 
@@ -30,7 +32,7 @@ services:
     depends_on:
       - adapter
     ports:
-      - "4173:4173"
+      - "127.0.0.1:4173:4173"
 
 volumes:
   adapter-data:

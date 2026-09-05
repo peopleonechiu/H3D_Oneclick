@@ -12,10 +12,10 @@
 - `POST /v1/3d/generations`，使用 SSE 回報進度
 - `POST /generate`，提供 Tencent 官方 synchronous API 形狀
 
-啟動 shape pipeline 前，wrapper 會檢查 NVIDIA CUDA 裝置與至少 10 GB VRAM。只有 paint source tree 存在且裝置至少有 21 GB VRAM 時才啟用 PBR。若使用者要求材質但能力不足，工作會明確失敗，不會默默回傳無貼圖結果。
+啟動 shape pipeline 前，wrapper 會檢查 NVIDIA CUDA 裝置與至少 10 GB VRAM。PBR 需完整 paint／DINO／RealESRGAN 資產、native imports，以及至少 29 GB VRAM（目前兩個 pipeline 同時常駐）。要求材質但能力不足會明確失敗，不會默默回傳無貼圖結果。
 
 ## 模型下載
 
-`download_model.py` 會在 UI 已經開啟後，由 Launcher 使用包內 Python 執行。它透過私有 runtime 的 `huggingface_hub` 將檔案下載到 `<model>.partial`，Hugging Face snapshot 完成後才重新命名成正式目錄。正式建置應將 `--revision` 固定到模型 manifest，不應依賴會移動的 branch。
+正式 launcher 已改用 `adapter/src/model-files.mjs` 與 `packaging/models/windows.json`，以包內 Node 固定 revision、驗證 SHA-256 並續傳。`download_model.py` 是保留的舊開發入口，不再由學生啟動器呼叫，不應用於新打包流程。
 
 正式發佈時必須攜帶 Tencent 的 `LICENSE`、`Notice.txt`，以及所有包入的第三方 Python／native 元件授權。這個開發 wrapper 本身不代表已取得 checkpoint 再散布許可。

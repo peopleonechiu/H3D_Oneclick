@@ -34,17 +34,20 @@ fi
 
 # A second click should reopen the existing local app instead of starting a
 # second adapter/backend on the same ports.
-if curl --silent --show-error --fail --max-time 1 "http://127.0.0.1:${WEB_PORT}/api/health" | grep -q '"adapter":"jic-local-adapter"'; then
+if curl --silent --show-error --fail --max-time 1 "http://127.0.0.1:${WEB_PORT}/api/health" | "$NODE" -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const p=JSON.parse(s);process.exit(p.adapter==="jic-local-adapter"&&p.platform==="macos-arm64"?0:1)}catch{process.exit(1)}})'; then
   open "http://127.0.0.1:${WEB_PORT}"
   exit 0
 fi
+"$NODE" "$APP_ROOT/adapter/src/launcher-check.mjs" ports "$WEB_PORT" "$ADAPTER_PORT" "$BACKEND_PORT"
 
 mkdir -p "$MODEL_STORE" "$DATA_ROOT" "$LOG_DIR"
 
 # Keep mlx-serve's model cache inside the app's user-data directory. This is
 # process-local environment state; the launcher does not edit shell profiles
 # or the system PATH.
-export HOME="$DATA_ROOT"
+# Scope the MLX home override to its child process, not this launcher.
+BACKEND_ENV_JSON=$("$NODE" -e 'console.log(JSON.stringify({HOME:process.argv[1]}))' "$DATA_ROOT")
+export BACKEND_ENV_JSON
 
 BACKEND_ARGS_JSON=$(
   "$NODE" -e 'console.log(JSON.stringify(process.argv.slice(1)))' -- \
@@ -52,7 +55,7 @@ BACKEND_ARGS_JSON=$(
 )
 MODEL_DOWNLOAD_ARGS_JSON=$(
   "$NODE" -e 'console.log(JSON.stringify(process.argv.slice(1)))' -- \
-    pull ddalcu/Hunyuan3D-2.1-MLX-Serve-8bit
+    "$APP_ROOT/adapter/src/model-files.mjs" "$APP_ROOT/packaging/models/macos.json" "$MODEL_PATH"
 )
 
 cleanup() {
@@ -77,10 +80,14 @@ export BACKEND_REQUEST_MODEL="Hunyuan3D-2.1-MLX-Serve-8bit"
 export BACKEND_COMMAND="$BACKEND"
 export BACKEND_ARGS_JSON
 export BACKEND_WORKDIR="$APP_ROOT"
-export MODEL_DOWNLOAD_COMMAND="$BACKEND"
+export MODEL_DOWNLOAD_COMMAND="$NODE"
+export MODEL_MANIFEST_PATH="$APP_ROOT/packaging/models/macos.json"
+export BIND_HOST="127.0.0.1"
+export ALLOWED_ORIGINS="http://127.0.0.1:${WEB_PORT},http://localhost:${WEB_PORT}"
 export MODEL_DOWNLOAD_ARGS_JSON
 export MODEL_DOWNLOAD_WORKDIR="$APP_ROOT"
 export MODEL_EXPECTED_PATH="$MODEL_PATH"
+export MODEL_PROGRESS_PATH="$MODEL_PATH.partial"
 export MODEL_TOTAL_BYTES="8100000000"
 "$NODE" "$ADAPTER_ENTRY" >"$LOG_DIR/adapter.log" 2>&1 &
 ADAPTER_PID=$!
@@ -93,5 +100,6 @@ WEB_PID=$!
 
 echo "JIC_YZUIC_Hunyuan3D-Mac is starting."
 echo "Logs: $LOG_DIR"
+"$NODE" "$APP_ROOT/adapter/src/launcher-check.mjs" ready "http://127.0.0.1:${WEB_PORT}" macos-arm64
 open "http://127.0.0.1:${WEB_PORT}"
 wait "$WEB_PID"
